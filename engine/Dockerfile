@@ -17,9 +17,12 @@ RUN apk add bash \
 
 WORKDIR /etc/app
 COPY ./requirements.txt ./
+ENV GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1
+ENV GRPC_PYTHON_BUILD_SYSTEM_ZLIB=1
 RUN pip3 install --upgrade pip
+RUN pip3 install --upgrade wheel
 RUN pip3 install --upgrade setuptools
-RUN pip3 install --no-cache-dir grpcio==1.59.0
+RUN pip3 install --no-cache-dir grpcio==1.60.0
 RUN pip3 install -r requirements.txt
 
 # we intentionally have two COPY commands, this is to have the requirements.txt in a separate build step
