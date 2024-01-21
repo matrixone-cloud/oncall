@@ -1,4 +1,4 @@
-FROM python:3.11.4-alpine3.18 AS base
+FROM python:3.11.7-alpine3.19 AS base
 
 # Create a group and user to run an app
 ENV APP_USER=appuser
@@ -17,7 +17,10 @@ RUN apk add bash \
 
 WORKDIR /etc/app
 COPY ./requirements.txt ./
-RUN pip install -r requirements.txt
+RUN pip3 install --upgrade pip
+RUN pip3 install --upgrade setuptools
+RUN pip3 install --no-cache-dir grpcio==1.59.0
+RUN pip3 install -r requirements.txt
 
 # we intentionally have two COPY commands, this is to have the requirements.txt in a separate build step
 # which only invalidates when the requirements.txt actually changes. This avoids having to unneccasrily reinstall deps (which is time-consuming)
@@ -47,10 +50,10 @@ ENV prometheus_multiproc_dir "/tmp/prometheus_django_metrics"
 
 FROM base AS dev
 RUN apk add sqlite mysql-client postgresql-client
-RUN pip install -r requirements-dev.txt
+RUN pip3 install -r requirements-dev.txt
 
 FROM dev AS dev-enterprise
-RUN pip install -r requirements-enterprise-docker.txt
+RUN pip3 install -r requirements-enterprise-docker.txt
 
 FROM base AS prod
 
