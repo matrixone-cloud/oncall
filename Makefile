@@ -187,15 +187,15 @@ purge-queues: ## purge celery queues
 	$(call run_engine_docker_command,celery -A engine purge -f)
 
 shell:  ## starts an OnCall engine Django shell
-	$(call run_engine_docker_command,python manage.py shell)
+	$(call run_engine_docker_command,python3.11 manage.py shell)
 
 dbshell:  ## opens a DB shell
-	$(call run_engine_docker_command,python manage.py dbshell)
+	$(call run_engine_docker_command,python3.11 manage.py dbshell)
 
 engine-manage:  ## run Django's `manage.py` script, inside of a docker container, passing `$CMD` as arguments.
                 ## e.g. `make engine-manage CMD="makemigrations"`
                 ## https://docs.djangoproject.com/en/4.1/ref/django-admin/#django-admin-makemigrations
-	$(call run_engine_docker_command,python manage.py $(CMD))
+	$(call run_engine_docker_command,python3.11 manage.py $(CMD))
 
 test-e2e:  ## run the e2e tests in headless mode
 	yarn --cwd grafana-plugin test:e2e
@@ -249,13 +249,18 @@ backend-bootstrap:
 	fi
 
 backend-migrate:
-	$(call backend_command,python manage.py migrate)
+	$(call backend_command,python3.11 manage.py migrate)
 
+
+# to local test, run
+# make start DOCKER_COMPOSE_FILE=docker-compose-local-debug.yml COMPOSE_PROFILES=postgres,engine,grafana,rabbitmq,redis
+# then
+# make run-backend-server
 run-backend-server:
-	$(call backend_command,python manage.py runserver 0.0.0.0:8080)
+	$(call backend_command,python3.11 manage.py runserver 127.0.0.1:8080)
 
 run-backend-celery:
-	$(call backend_command,python manage.py start_celery)
+	$(call backend_command,python3.11 manage.py start_celery)
 
 backend-command:
 	$(call backend_command,$(CMD))
@@ -264,4 +269,4 @@ backend-manage-command:  ## run Django's `manage.py` script, passing `$CMD` as a
                          ## e.g. `make backend-manage-command CMD="makemigrations"`
                          ## https://docs.djangoproject.com/en/4.1/ref/django-admin/#django-admin-makemigrations
                          ## alternatively you can open docker container with engine and run commands from there
-	$(call backend_command,python manage.py $(CMD))
+	$(call backend_command,python3.11 manage.py $(CMD))
