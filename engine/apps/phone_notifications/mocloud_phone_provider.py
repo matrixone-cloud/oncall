@@ -9,7 +9,7 @@ from .phone_provider import PhoneProvider, ProviderFlags
 logger = logging.getLogger(__name__)
 
 
-class SimplePhoneProvider(PhoneProvider):
+class MOCloudPhoneProvider(PhoneProvider):
     """
     SimplePhoneProvider is an example of phone provider which supports only SMS messages.
     It is not intended for real-life usage and needed only as example of PhoneProviders suitable to use ONLY in OSS.
@@ -37,9 +37,11 @@ class SimplePhoneProvider(PhoneProvider):
             raise FailedToStartVerification
 
     def finish_verification(self, number, code):
+        """
+        Skip sms verification
+        """
         has = cache.get(self._cache_key(number))
-        # if has is not None and has == code:
-        if has is not None:
+        if has is not None and has == code:
             return number
         else:
             return None
