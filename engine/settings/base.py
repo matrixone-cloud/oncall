@@ -838,6 +838,7 @@ DEFAULT_PHONE_PROVIDER = "twilio"
 PHONE_PROVIDERS = {
     "twilio": "apps.twilioapp.phone_provider.TwilioPhoneProvider",
     "simple": "apps.phone_notifications.simple_phone_provider.SimplePhoneProvider",
+    "mocloud":"apps.phone_notifications.mocloud_phone_provider.MOCloudPhoneProvider",
 }
 
 if IS_OPEN_SOURCE:
