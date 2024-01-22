@@ -417,11 +417,13 @@ class UserView(
     )
     def get_verification_code(self, request, pk) -> Response:
         logger.info("get_verification_code: validating reCAPTCHA code")
-        valid = check_recaptcha_internal_api(request, "mobile_verification_code")
+        # skip google recaptcha
+        # valid = check_recaptcha_internal_api(request, "mobile_verification_code")
+        valid = True
         if not valid:
             logger.warning("get_verification_code: invalid reCAPTCHA validation")
             return Response("failed reCAPTCHA check", status=status.HTTP_400_BAD_REQUEST)
-        logger.info('get_verification_code: pass reCAPTCHA validation"')
+        logger.info('get_verification_code: reCAPTCHA validation skiped"')
 
         user = self.get_object()
         phone_backend = PhoneBackend()
@@ -443,8 +445,9 @@ class UserView(
         throttle_classes=[GetPhoneVerificationCodeThrottlerPerUser, GetPhoneVerificationCodeThrottlerPerOrg],
     )
     def get_verification_call(self, request, pk) -> Response:
-        logger.info("get_verification_code_via_call: validating reCAPTCHA code")
-        valid = check_recaptcha_internal_api(request, "mobile_verification_code")
+        # skip google recaptcha
+        # valid = check_recaptcha_internal_api(request, "mobile_verification_code")
+        valid = True
         if not valid:
             logger.warning("get_verification_code_via_call: invalid reCAPTCHA validation")
             return Response("failed reCAPTCHA check", status=status.HTTP_400_BAD_REQUEST)

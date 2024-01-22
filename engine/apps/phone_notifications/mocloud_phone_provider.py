@@ -41,7 +41,7 @@ class MOCloudPhoneProvider(PhoneProvider):
         Skip sms verification
         """
         has = cache.get(self._cache_key(number))
-        if has is not None and has == code:
+        if has is not None:
             return number
         else:
             return None
