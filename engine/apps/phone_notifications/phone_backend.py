@@ -10,6 +10,10 @@ from apps.alerts.signals import user_notification_action_triggered_signal
 from apps.base.utils import live_settings
 from common.api_helpers.utils import create_engine_url
 from common.utils import clean_markup
+from settings.base import PHONE_PROVIDER
+
+import json
+# from apps.mocloud.mocloud_template import VMSTemplate
 
 from .exceptions import (
     CallsLimitExceeded,
@@ -58,7 +62,8 @@ class PhoneBackend:
                 self._notify_by_cloud_call(user, message)
                 record.save()
             else:
-                provider_call = self._notify_by_provider_call(user, message)
+                provider_call = self._notify_by_provider_call(
+                    user, message, renderer.alert_group)
                 # it is important that record is saved here, so it is possible to execute link_and_save
                 record.save()
                 if provider_call:
@@ -85,9 +90,10 @@ class PhoneBackend:
                 notification_channel=notification_policy.notify_by if notification_policy else None,
             )
             log_record.save()
-            user_notification_action_triggered_signal.send(sender=PhoneBackend.notify_by_call, log_record=log_record)
+            user_notification_action_triggered_signal.send(
+                sender=PhoneBackend.notify_by_call, log_record=log_record)
 
-    def _notify_by_provider_call(self, user, message) -> Optional[ProviderPhoneCall]:
+    def _notify_by_provider_call(self, user, message, alert_group) -> Optional[ProviderPhoneCall]:
         """
         _notify_by_provider_call makes a notification call using configured phone provider.
         """
@@ -99,6 +105,15 @@ class PhoneBackend:
             raise CallsLimitExceeded
         elif calls_left < 3:
             message = self._add_call_limit_warning(calls_left, message)
+        
+        if PHONE_PROVIDER == "mocloud":
+            parmas = {"cluster_env": alert_group.channel.short_name,
+                  "alert_count": alert_group.alerts.count(), }
+            parmasStr=json.dumps(parmas)
+            # in mocloud alert, message is actually template parmas (json)
+            # parmasStr = VMSTemplate.rander_params(alert_group)
+            return self.phone_provider.make_notification_call(user.verified_phone_number, parmasStr)
+        
         return self.phone_provider.make_notification_call(user.verified_phone_number, message)
 
     def _notify_by_cloud_call(self, user, message):
@@ -106,7 +121,8 @@ class PhoneBackend:
         _notify_by_cloud_call makes a call using connected Grafana Cloud Instance.
         This method should be  used only in OSS instances.
         """
-        url = create_engine_url("api/v1/make_call", override_base=settings.GRAFANA_CLOUD_ONCALL_API_URL)
+        url = create_engine_url(
+            "api/v1/make_call", override_base=settings.GRAFANA_CLOUD_ONCALL_API_URL)
         auth = {"Authorization": live_settings.GRAFANA_CLOUD_ONCALL_TOKEN}
         data = {
             "email": user.email,
@@ -115,21 +131,26 @@ class PhoneBackend:
         try:
             response = requests.post(url, headers=auth, data=data, timeout=5)
         except requests.exceptions.RequestException as e:
-            logger.error(f"PhoneBackend._notify_by_cloud_call: request exception {str(e)}")
+            logger.error(
+                f"PhoneBackend._notify_by_cloud_call: request exception {str(e)}")
             raise FailedToMakeCall
         if response.status_code == 200:
             logger.info("PhoneBackend._notify_by_cloud_call: OK")
         elif response.status_code == 400 and response.json().get("error") == "limit-exceeded":
-            logger.info("PhoneBackend._notify_by_cloud_call: phone calls limit exceeded")
+            logger.info(
+                "PhoneBackend._notify_by_cloud_call: phone calls limit exceeded")
             raise CallsLimitExceeded
         elif response.status_code == 400 and response.json().get("error") == "number-not-verified":
-            logger.info("PhoneBackend._notify_by_cloud_call: cloud number not verified")
+            logger.info(
+                "PhoneBackend._notify_by_cloud_call: cloud number not verified")
             raise NumberNotVerified
         elif response.status_code == 404:
-            logger.info(f"PhoneBackend._notify_by_cloud_call: user not found id={user.id} email={user.email}")
+            logger.info(
+                f"PhoneBackend._notify_by_cloud_call: user not found id={user.id} email={user.email}")
             raise FailedToMakeCall
         else:
-            logger.error(f"PhoneBackend._notify_by_cloud_call: unexpected response code {response.status_code}")
+            logger.error(
+                f"PhoneBackend._notify_by_cloud_call: unexpected response code {response.status_code}")
             raise FailedToMakeCall
 
     def _add_call_limit_warning(self, calls_left, message):
@@ -190,7 +211,8 @@ class PhoneBackend:
                 notification_channel=notification_policy.notify_by if notification_policy else None,
             )
             log_record.save()
-            user_notification_action_triggered_signal.send(sender=PhoneBackend.notify_by_sms, log_record=log_record)
+            user_notification_action_triggered_signal.send(
+                sender=PhoneBackend.notify_by_sms, log_record=log_record)
 
     def _notify_by_provider_sms(self, user, message) -> Optional[ProviderSMS]:
         """
@@ -211,7 +233,8 @@ class PhoneBackend:
         _notify_by_cloud_sms sends a sms using connected Grafana Cloud Instance.
         This method is used only in OSS instances.
         """
-        url = create_engine_url("api/v1/send_sms", override_base=settings.GRAFANA_CLOUD_ONCALL_API_URL)
+        url = create_engine_url(
+            "api/v1/send_sms", override_base=settings.GRAFANA_CLOUD_ONCALL_API_URL)
         auth = {"Authorization": live_settings.GRAFANA_CLOUD_ONCALL_TOKEN}
         data = {
             "email": user.email,
@@ -220,7 +243,8 @@ class PhoneBackend:
         try:
             response = requests.post(url, headers=auth, data=data, timeout=5)
         except requests.exceptions.RequestException as e:
-            logger.error(f"Unable to send SMS through cloud. Request exception {str(e)}")
+            logger.error(
+                f"Unable to send SMS through cloud. Request exception {str(e)}")
             raise FailedToSendSMS
         if response.status_code == 200:
             logger.info("Sent cloud sms successfully")
@@ -312,9 +336,11 @@ class PhoneBackend:
         send_verification_sms sends a verification code to a user.
         Caller should handle exceptions raised by phone_provider.send_verification_sms.
         """
-        logger.info(f"PhoneBackend.send_verification_sms: start verification for user {user.id}")
+        logger.info(
+            f"PhoneBackend.send_verification_sms: start verification for user {user.id}")
         if self._validate_user_number(user):
-            logger.info(f"PhoneBackend.send_verification_sms: number already verified for user {user.id}")
+            logger.info(
+                f"PhoneBackend.send_verification_sms: number already verified for user {user.id}")
             raise NumberAlreadyVerified
         self.phone_provider.send_verification_sms(user.unverified_phone_number)
 
@@ -323,25 +349,31 @@ class PhoneBackend:
         make_verification_call makes a verification call  to a user.
         Caller should handle exceptions raised by phone_provider.make_verification_call
         """
-        logger.info(f"PhoneBackend.make_verification_call: start verification user_id={user.id}")
+        logger.info(
+            f"PhoneBackend.make_verification_call: start verification user_id={user.id}")
         if self._validate_user_number(user):
-            logger.info(f"PhoneBackend.make_verification_call: number already verified user_id={user.id}")
+            logger.info(
+                f"PhoneBackend.make_verification_call: number already verified user_id={user.id}")
             raise NumberAlreadyVerified
-        self.phone_provider.make_verification_call(user.unverified_phone_number)
+        self.phone_provider.make_verification_call(
+            user.unverified_phone_number)
 
     def verify_phone_number(self, user, code) -> bool:
         prev_number = user.verified_phone_number
-        new_number = self.phone_provider.finish_verification(user.unverified_phone_number, code)
+        new_number = self.phone_provider.finish_verification(
+            user.unverified_phone_number, code)
         if new_number:
             user.save_verified_phone_number(new_number)
             # TODO: move this to async task
             if prev_number:
                 self._notify_disconnected_number(user, prev_number)
             self._notify_connected_number(user)
-            logger.info(f"PhoneBackend.verify_phone_number: verified user_id={user.id}")
+            logger.info(
+                f"PhoneBackend.verify_phone_number: verified user_id={user.id}")
             return True
         else:
-            logger.info(f"PhoneBackend.verify_phone_number: verification failed user_id={user.id}")
+            logger.info(
+                f"PhoneBackend.verify_phone_number: verification failed user_id={user.id}")
             return False
 
     def forget_number(self, user) -> bool:
@@ -379,13 +411,15 @@ class PhoneBackend:
         )
         try:
             if not user.verified_phone_number:
-                logger.error("PhoneBackend._notify_connected_number: number not verified")
+                logger.error(
+                    "PhoneBackend._notify_connected_number: number not verified")
                 return
             self.phone_provider.send_sms(user.verified_phone_number, text)
         except FailedToSendSMS:
             logger.error("PhoneBackend._notify_connected_number: failed")
         except ProviderNotSupports:
-            logger.info("PhoneBackend._notify_connected_number: provider not supports sms")
+            logger.info(
+                "PhoneBackend._notify_connected_number: provider not supports sms")
 
     def _notify_disconnected_number(self, user, number):
         text = (
@@ -397,4 +431,5 @@ class PhoneBackend:
         except FailedToSendSMS:
             logger.error("PhoneBackend._notify_disconnected_number: failed")
         except ProviderNotSupports:
-            logger.info("PhoneBackend._notify_disconnected_number: provider not supports sms")
+            logger.info(
+                "PhoneBackend._notify_disconnected_number: provider not supports sms")
