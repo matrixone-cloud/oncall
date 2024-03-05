@@ -2,10 +2,11 @@ import React from 'react';
 
 import { Icon, Label, Tooltip } from '@grafana/ui';
 
-import { FormItem, FormItemType } from 'components/GForm/GForm.types';
+import { FormItemType } from 'components/GForm/GForm.types';
+import { GrafanaTeamStore } from 'models/grafana_team/grafana_team';
 import { generateAssignToTeamInputDescription } from 'utils/consts';
 
-export const form: { name: string; fields: FormItem[] } = {
+export const getForm = (grafanaTeamStore: GrafanaTeamStore) => ({
   name: 'Integration',
   fields: [
     {
@@ -33,13 +34,35 @@ export const form: { name: string; fields: FormItem[] } = {
       ),
       type: FormItemType.GSelect,
       extra: {
-        modelName: 'grafanaTeamStore',
+        items: grafanaTeamStore.items,
+        fetchItemsFn: grafanaTeamStore.updateItems,
+        fetchItemFn: grafanaTeamStore.fetchItemById,
+        getSearchResult: grafanaTeamStore.getSearchResult,
         displayField: 'name',
         valueField: 'id',
         showSearch: true,
         allowClear: true,
       },
     },
+    {
+      name: '', // this will skip field it in the submitted form
+      label: 'Bi-directional Integration',
+      type: FormItemType.PlainLabel,
+      isHidden: (data) => data.integration !== 'servicenow',
+    },
+    {
+      name: 'servicenow_url',
+      label: 'Service Now URL',
+      type: FormItemType.Input,
+      isHidden: (data) => data.integration !== 'servicenow',
+    },
+    {
+      name: 'authorization_header',
+      label: 'Authorization Header',
+      type: FormItemType.Input,
+      isHidden: (data) => data.integration !== 'servicenow',
+    },
+
     {
       name: 'alert_manager',
       type: FormItemType.Other,
@@ -58,4 +81,4 @@ export const form: { name: string; fields: FormItem[] } = {
       render: true,
     },
   ],
-};
+});

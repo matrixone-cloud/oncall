@@ -42,7 +42,7 @@ class WebhooksFilter(ByTeamModelFieldFilterMixin, ModelFieldFilterMixin, filters
     team = TeamModelMultipleChoiceFilter()
 
 
-class WebhooksView(TeamFilteringMixin, PublicPrimaryKeyMixin, ModelViewSet):
+class WebhooksView(TeamFilteringMixin, PublicPrimaryKeyMixin[Webhook], ModelViewSet):
     authentication_classes = (PluginAuthentication,)
     permission_classes = (IsAuthenticated, RBACPermission)
 
@@ -94,6 +94,7 @@ class WebhooksView(TeamFilteringMixin, PublicPrimaryKeyMixin, ModelViewSet):
     def get_queryset(self, ignore_filtering_by_available_teams=False):
         queryset = Webhook.objects.filter(
             organization=self.request.auth.organization,
+            is_from_connected_integration=False,
         )
         if not ignore_filtering_by_available_teams:
             queryset = queryset.filter(*self.available_teams_lookup_args).distinct()

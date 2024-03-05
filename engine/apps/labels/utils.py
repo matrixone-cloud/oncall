@@ -16,34 +16,6 @@ LABEL_OUTDATED_TIMEOUT_MINUTES = 30
 ASSOCIATED_MODEL_NAME = "AssociatedLabel"
 
 
-class LabelUpdateParam(typing.TypedDict):
-    name: str
-
-
-class LabelParams(typing.TypedDict):
-    id: str
-    name: str
-
-
-class LabelData(typing.TypedDict):
-    key: LabelParams
-    value: LabelParams
-
-
-class ValueData(typing.TypedDict):
-    value_name: str
-    key_name: str
-
-
-class LabelKeyData(typing.TypedDict):
-    key: LabelParams
-    values: typing.List[LabelParams]
-
-
-LabelsData = typing.List[LabelData]
-LabelsKeysData = typing.List[LabelParams]
-
-
 def get_associating_label_model(obj_model_name: str) -> typing.Type["AssociatedLabel"]:
     associating_label_model_name = obj_model_name + ASSOCIATED_MODEL_NAME
     label_model = apps.get_model("labels", associating_label_model_name)
@@ -51,7 +23,11 @@ def get_associating_label_model(obj_model_name: str) -> typing.Type["AssociatedL
 
 
 def is_labels_feature_enabled(organization: "Organization") -> bool:
-    return settings.FEATURE_LABELS_ENABLED_FOR_ALL or organization.id in settings.FEATURE_LABELS_ENABLED_PER_ORG
+    """
+    is_labels_feature_enabled checks if env with labels feature is enabled and plugin is provisioned.
+    """
+    env_enabled = settings.FEATURE_LABELS_ENABLED_FOR_ALL or organization.id in settings.FEATURE_LABELS_ENABLED_PER_ORG
+    return organization.is_grafana_labels_enabled and env_enabled
 
 
 def get_labels_dict(labelable) -> dict[str, str]:

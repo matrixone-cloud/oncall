@@ -6,28 +6,28 @@ import cn from 'classnames/bind';
 import dayjs from 'dayjs';
 import { observer } from 'mobx-react';
 
-import Block from 'components/GBlock/Block';
-import Text from 'components/Text/Text';
+import { Block } from 'components/GBlock/Block';
+import { Text } from 'components/Text/Text';
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
-import { Alert as AlertType } from 'models/alertgroup/alertgroup.types';
 import { getTimezone } from 'models/user/user.helpers';
 import { UserCurrentlyOnCall } from 'models/user/user.types';
+import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization';
+import { UserActions } from 'utils/authorization/authorization';
 
 import styles from './AddResponders.module.scss';
 import { NotificationPolicyValue, UserResponder as UserResponderType } from './AddResponders.types';
-import AddRespondersPopup from './parts/AddRespondersPopup/AddRespondersPopup';
-import NotificationPoliciesSelect from './parts/NotificationPoliciesSelect/NotificationPoliciesSelect';
-import TeamResponder from './parts/TeamResponder/TeamResponder';
-import UserResponder from './parts/UserResponder/UserResponder';
+import { AddRespondersPopup } from './parts/AddRespondersPopup/AddRespondersPopup';
+import { NotificationPoliciesSelect } from './parts/NotificationPoliciesSelect/NotificationPoliciesSelect';
+import { TeamResponder } from './parts/TeamResponder/TeamResponder';
+import { UserResponder } from './parts/UserResponder/UserResponder';
 
 const cx = cn.bind(styles);
 
 type Props = {
   mode: 'create' | 'update';
   hideAddResponderButton?: boolean;
-  existingPagedUsers?: AlertType['paged_users'];
+  existingPagedUsers?: ApiSchemas['AlertGroup']['paged_users'];
   onAddNewParticipant?: (responder: UserResponderType) => Promise<void>;
   generateRemovePreviouslyPagedUserCallback?: (userId: string) => () => Promise<void>;
 };
@@ -48,7 +48,7 @@ const LearnMoreAboutNotificationPoliciesLink: React.FC = () => (
   </a>
 );
 
-const AddResponders = observer(
+export const AddResponders = observer(
   ({
     mode,
     hideAddResponderButton,
@@ -225,5 +225,3 @@ const AddResponders = observer(
     );
   }
 );
-
-export default AddResponders;

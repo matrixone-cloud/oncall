@@ -8,6 +8,7 @@ from telegram.utils.request import Request
 
 from apps.alerts.models import AlertGroup
 from apps.base.utils import live_settings
+from apps.telegram.exceptions import AlertGroupTelegramMessageDoesNotExist
 from apps.telegram.models import TelegramMessage
 from apps.telegram.renderers.keyboard import TelegramKeyboardRenderer
 from apps.telegram.renderers.message import TelegramMessageRenderer
@@ -41,7 +42,7 @@ class TelegramClient:
         # Hack to test chatops-proxy v3, remove once v3 is release.
         if settings.CHATOPS_V3:
             webhook_url = webhook_url or create_engine_url(
-                "/telegram/v3/", override_base=live_settings.TELEGRAM_WEBHOOK_HOST
+                "api/v3/webhook/telegram/", override_base=live_settings.TELEGRAM_WEBHOOK_HOST
             )
         else:
             webhook_url = webhook_url or create_engine_url(
@@ -157,7 +158,10 @@ class TelegramClient:
             ).first()
 
             if alert_group_message is None:
-                raise Exception("No alert group message found, probably it is not saved to database yet")
+                raise AlertGroupTelegramMessageDoesNotExist(
+                    f"No alert group message found, probably it is not saved to database yet, "
+                    f"alert group: {alert_group.id}"
+                )
 
             include_title = message_type == TelegramMessage.LINK_TO_CHANNEL_MESSAGE
             link = alert_group_message.link

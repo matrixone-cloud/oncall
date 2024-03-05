@@ -28,6 +28,10 @@ DEV_HELM_FILE = $(DEV_ENV_DIR)/helm-local.yml
 DEV_HELM_USER_SPECIFIC_FILE = $(DEV_ENV_DIR)/helm-local.dev.yml
 
 ENGINE_DIR = ./engine
+VENV_DIR = ./venv
+REQUIREMENTS_DEV_IN = $(ENGINE_DIR)/requirements-dev.in
+REQUIREMENTS_DEV_TXT = $(ENGINE_DIR)/requirements-dev.txt
+REQUIREMENTS_IN = $(ENGINE_DIR)/requirements.in
 REQUIREMENTS_TXT = $(ENGINE_DIR)/requirements.txt
 REQUIREMENTS_ENTERPRISE_TXT = $(ENGINE_DIR)/requirements-enterprise.txt
 SQLITE_DB_FILE = $(ENGINE_DIR)/oncall.db
@@ -237,25 +241,29 @@ backend-debug-disable: _backend-debug-disable stop start
 define backend_command
 	export `grep -v '^#' $(DEV_ENV_FILE) | xargs -0` && \
 	export BROKER_TYPE=$(BROKER_TYPE) && \
+	. ./venv/bin/activate && \
 	cd engine && \
 	$(1)
 endef
 
 backend-bootstrap:
-	pip install -U pip wheel
-	pip install -r $(REQUIREMENTS_TXT)
+	python3.11 -m venv $(VENV_DIR)
+	$(VENV_DIR)/bin/pip install -U pip wheel pip-tools
+	$(VENV_DIR)/bin/pip-sync $(REQUIREMENTS_TXT) $(REQUIREMENTS_DEV_TXT)
 	@if [ -f $(REQUIREMENTS_ENTERPRISE_TXT) ]; then \
-		pip install -r $(REQUIREMENTS_ENTERPRISE_TXT); \
+		$(VENV_DIR)/bin/pip install -r $(REQUIREMENTS_ENTERPRISE_TXT); \
 	fi
 
 backend-migrate:
 	$(call backend_command,python3.11 manage.py migrate)
 
+backend-compile-deps:
+	pip-compile --strip-extras $(REQUIREMENTS_IN)
+	pip-compile --strip-extras $(REQUIREMENTS_DEV_IN)
 
-# to local test, run
-# make start DOCKER_COMPOSE_FILE=docker-compose-local-debug.yml COMPOSE_PROFILES=postgres,engine,grafana,rabbitmq,redis
-# then
-# make run-backend-server
+backend-upgrade-deps:
+	pip-compile --strip-extras --upgrade $(REQUIREMENTS_IN)
+
 run-backend-server:
 	$(call backend_command,python3.11 manage.py runserver 127.0.0.1:8080)
 

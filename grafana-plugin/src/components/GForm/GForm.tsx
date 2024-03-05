@@ -1,16 +1,17 @@
 import React from 'react';
 
-import { Field, Form, FormFieldErrors, Input, InputControl, Select, Switch, TextArea } from '@grafana/ui';
+import { Field, Form, FormFieldErrors, Input, InputControl, Label, Select, Switch, TextArea } from '@grafana/ui';
 import { capitalCase } from 'change-case';
 import cn from 'classnames/bind';
 import { isEmpty } from 'lodash-es';
 
-import Collapse from 'components/Collapse/Collapse';
+import { Collapse } from 'components/Collapse/Collapse';
 import { FormItem, FormItemType } from 'components/GForm/GForm.types';
-import MonacoEditor from 'components/MonacoEditor/MonacoEditor';
+import { MonacoEditor } from 'components/MonacoEditor/MonacoEditor';
 import { MONACO_READONLY_CONFIG } from 'components/MonacoEditor/MonacoEditor.config';
-import GSelect from 'containers/GSelect/GSelect';
-import RemoteSelect from 'containers/RemoteSelect/RemoteSelect';
+import { Text } from 'components/Text/Text';
+import { GSelect } from 'containers/GSelect/GSelect';
+import { RemoteSelect } from 'containers/RemoteSelect/RemoteSelect';
 
 import styles from './GForm.module.scss';
 
@@ -178,7 +179,7 @@ function renderFormControl(
   }
 }
 
-class GForm extends React.Component<GFormProps, {}> {
+export class GForm extends React.Component<GFormProps, {}> {
   render() {
     const { form, data, onFieldRender, customFieldSectionRenderer: CustomFieldSectionRenderer } = this.props;
 
@@ -191,6 +192,14 @@ class GForm extends React.Component<GFormProps, {}> {
           const renderField = (formItem: FormItem, formIndex: number) => {
             if (this.isFormItemHidden(formItem, getValues())) {
               return null; // don't render the field
+            }
+
+            if (formItem.type === FormItemType.PlainLabel) {
+              return (
+                <Label className={cx('label')}>
+                  <Text type="primary">{formItem.label}</Text>
+                </Label>
+              );
             }
 
             const disabled = formItem.disabled
@@ -295,5 +304,3 @@ class GForm extends React.Component<GFormProps, {}> {
     onSubmit(normalizedData);
   };
 }
-
-export default GForm;
