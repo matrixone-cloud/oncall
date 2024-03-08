@@ -1,12 +1,6 @@
 import logging
 from random import randint
 
-
-import os
-import sys
-
-
-
 from django.core.cache import cache
 
 from ..phone_notifications.exceptions import FailedToSendSMS, FailedToStartVerification

@@ -11,8 +11,9 @@ from apps.base.utils import live_settings
 from common.api_helpers.utils import create_engine_url
 from common.utils import clean_markup
 from settings.base import PHONE_PROVIDER
-
 import json
+from apps.labels.utils import get_alert_group_labels_dict, get_labels_dict, is_labels_feature_enabled
+
 # from apps.mocloud.mocloud_template import VMSTemplate
 
 from .exceptions import (
@@ -105,15 +106,15 @@ class PhoneBackend:
             raise CallsLimitExceeded
         elif calls_left < 3:
             message = self._add_call_limit_warning(calls_left, message)
-        
+
         if PHONE_PROVIDER == "mocloud":
             parmas = {"cluster_env": alert_group.channel.short_name,
-                  "alert_count": alert_group.alerts.count(), }
-            parmasStr=json.dumps(parmas)
+                      "alert_count": alert_group.alerts.count(), }
+            parmasStr = json.dumps(parmas)
             # in mocloud alert, message is actually template parmas (json)
             # parmasStr = VMSTemplate.rander_params(alert_group)
             return self.phone_provider.make_notification_call(user.verified_phone_number, parmasStr)
-        
+
         return self.phone_provider.make_notification_call(user.verified_phone_number, message)
 
     def _notify_by_cloud_call(self, user, message):
@@ -165,7 +166,6 @@ class PhoneBackend:
         It handles business logic - limits, cloud notifications and UserNotificationPolicyLogRecord creation
         SMS itself is handled by phone provider.
         """
-
         from apps.base.models import UserNotificationPolicyLogRecord
 
         log_record_error_code = None
@@ -185,7 +185,8 @@ class PhoneBackend:
                 self._notify_by_cloud_sms(user, message)
                 record.save()
             else:
-                provider_sms = self._notify_by_provider_sms(user, message)
+                provider_sms = self._notify_by_provider_sms(
+                    user, message, alert_group)
                 record.save()
                 if provider_sms:
                     provider_sms.link_and_save(record)
@@ -214,18 +215,26 @@ class PhoneBackend:
             user_notification_action_triggered_signal.send(
                 sender=PhoneBackend.notify_by_sms, log_record=log_record)
 
-    def _notify_by_provider_sms(self, user, message) -> Optional[ProviderSMS]:
+    def _notify_by_provider_sms(self, user, message, alert_group) -> Optional[ProviderSMS]:
         """
         _notify_by_provider_sms sends a notification sms using configured phone provider.
         """
         if not self._validate_user_number(user):
             raise NumberNotVerified
-
+        # labels = get_alert_group_labels_dict(alert_group)
         sms_left = self._validate_sms_left(user)
         if sms_left <= 0:
             raise SMSLimitExceeded
         elif sms_left < 3:
             message = self._add_sms_limit_warning(sms_left, message)
+
+        if PHONE_PROVIDER == "mocloud":
+            # in mocloud alert, message is actually template parmas (json)
+            parmasStr = '{"cluster_env": "%s","alert_time": "%s","alert_name": "%s"}' % (
+                alert_group.channel.short_name, alert_group.started_at, alert_group.web_title_cache)
+            # parmasStr = VMSTemplate.rander_params(alert_group)
+            return self.phone_provider.send_notification_sms(user.verified_phone_number, parmasStr)
+
         return self.phone_provider.send_notification_sms(user.verified_phone_number, message)
 
     def _notify_by_cloud_sms(self, user, message):

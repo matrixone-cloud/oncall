@@ -472,5 +472,8 @@ x-wr-timezone==0.0.6
 zipp==3.17.0
     # via importlib-metadata
 
+alibabacloud_dysmsapi20170525==2.0.24
+alibabacloud_dyvmsapi20170525==3.0.0
+
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

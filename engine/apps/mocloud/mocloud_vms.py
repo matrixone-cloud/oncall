@@ -46,11 +46,11 @@ class MOCloudVMS:
         )
         try:
             # 复制代码运行请自行打印 API 的返回值
-            self.vms_client.single_call_by_voice_with_options(
+            self.vms_client.single_call_by_tts_with_options(
                 single_call_by_voice_request, util_models.RuntimeOptions())
         except Exception as error:
             # 错误 message
-            print(error.message)
+            # print(error.message)
             # 诊断地址
             print(error.data.get("Recommend"))
             UtilClient.assert_as_string(error.message)

@@ -35,7 +35,7 @@ class MOCloudSMS:
         )
         return Dysmsapi20170525Client(config)
 
-    def send_sms_notification(self, number, parmas):
+    def send_sms_notification(self, number, parmas):        
         send_sms_request = dysmsapi_20170525_models.SendSmsRequest(
             phone_numbers=number,
             sign_name=DEFAULT_SIGN_NAME,
@@ -67,7 +67,7 @@ class MOCloudSMS:
         )
         runtime = util_models.RuntimeOptions()
         try:
-            self.sms_client.send_sms_with_options(send_sms_request, runtime)
+            resp=self.sms_client.send_sms_with_options(send_sms_request, runtime)
             logger.info(f"send verification code [{code}] to [{number}] success")
         except Exception as error:
             logger.error(f"send verification code [{code}] to [{number}] failed")

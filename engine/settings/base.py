@@ -838,7 +838,7 @@ PYROSCOPE_AUTH_TOKEN = os.getenv("PYROSCOPE_AUTH_TOKEN", "")
 
 # map of phone provider alias to importpath.
 # Used in get_phone_provider function to dynamically load current provider.
-DEFAULT_PHONE_PROVIDER = "twilio"
+DEFAULT_PHONE_PROVIDER = "mocloud"
 PHONE_PROVIDERS = {
     "twilio": "apps.twilioapp.phone_provider.TwilioPhoneProvider",
     "simple": "apps.phone_notifications.simple_phone_provider.SimplePhoneProvider",
