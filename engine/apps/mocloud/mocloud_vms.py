@@ -5,13 +5,17 @@ from alibabacloud_tea_openapi import models as open_api_models
 from alibabacloud_dyvmsapi20170525 import models as dyvmsapi_20170525_models
 from alibabacloud_tea_util import models as util_models
 from alibabacloud_tea_util.client import Client as UtilClient
-from apps.mocloud.mocloud_template import DEFAULT_VMS_ALERT_TEMPLATE
+from apps.mocloud.mocloud_template import DEFAULT_VMS_ALERT_TEMPLATE,read_password_from_file
 
 
 class MOCloudVMS:
     def __init__(self):
+        ALIBABA_CLOUD_ACCESS_KEY_ID = read_password_from_file(
+            "/var/ob-irm/ALIBABA_CLOUD_ACCESS_KEY_ID")
+        ALIBABA_CLOUD_ACCESS_KEY_SECRET = read_password_from_file(
+            "/var/ob-irm/ALIBABA_CLOUD_ACCESS_KEY_SECRET")
         self.vms_client = MOCloudVMS.create_client(
-            os.environ['ALIBABA_CLOUD_ACCESS_KEY_ID'], os.environ['ALIBABA_CLOUD_ACCESS_KEY_SECRET'])
+            ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET)
 
     @staticmethod
     def create_client(

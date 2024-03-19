@@ -6,7 +6,7 @@ from alibabacloud_tea_openapi import models as open_api_models
 from alibabacloud_dysmsapi20170525 import models as dysmsapi_20170525_models
 from alibabacloud_tea_util import models as util_models
 from alibabacloud_tea_util.client import Client as UtilClient
-from apps.mocloud.mocloud_template import DEFAULT_SMS_VERTIFICATOIN_TEMPLATE, DEFAULT_SMS_NOTIFICATION_TEMPLATE, DEFAULT_SIGN_NAME
+from apps.mocloud.mocloud_template import DEFAULT_SMS_VERTIFICATOIN_TEMPLATE, DEFAULT_SMS_NOTIFICATION_TEMPLATE, DEFAULT_SIGN_NAME, read_password_from_file
 from ..phone_notifications.exceptions import FailedToSendSMS, FailedToStartVerification
 
 
@@ -15,8 +15,12 @@ logger = logging.getLogger(__name__)
 
 class MOCloudSMS:
     def __init__(self):
+        ALIBABA_CLOUD_ACCESS_KEY_ID = read_password_from_file(
+            os.environ['ACCESS_KEY_FILE'])
+        ALIBABA_CLOUD_ACCESS_KEY_SECRET = read_password_from_file(
+            os.environ['SECRET_KEY_FILE'])
         self.sms_client = MOCloudSMS.create_client(
-            os.environ['ALIBABA_CLOUD_ACCESS_KEY_ID'], os.environ['ALIBABA_CLOUD_ACCESS_KEY_SECRET'])
+            ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET)
 
     @staticmethod
     def create_client(

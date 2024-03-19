@@ -48,3 +48,12 @@ VMSTemplateDict = {
                                  "你好，集群环境 ${cluster_env} 的服务器产生 ${alert_count} 个故障告警 ，请及时处理。",
                                  {"cluster_env", "alert_count"})
 }
+
+def read_password_from_file(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            password = file.readline().strip()
+        return password
+    except FileNotFoundError:
+        print(f"File '{file_path}' not found.")
+        return None
