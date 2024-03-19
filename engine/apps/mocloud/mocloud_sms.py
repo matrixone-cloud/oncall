@@ -1,14 +1,12 @@
 import os
-import sys
 import logging
-from typing import List
 
 from alibabacloud_dysmsapi20170525.client import Client as Dysmsapi20170525Client
 from alibabacloud_tea_openapi import models as open_api_models
 from alibabacloud_dysmsapi20170525 import models as dysmsapi_20170525_models
 from alibabacloud_tea_util import models as util_models
 from alibabacloud_tea_util.client import Client as UtilClient
-from apps.mocloud.mocloud_template import DEFAULT_SMS_VERTIFICATOIN_TEMPLATE, DEFAULT_SIGN_NAME
+from apps.mocloud.mocloud_template import DEFAULT_SMS_VERTIFICATOIN_TEMPLATE, DEFAULT_SMS_NOTIFICATION_TEMPLATE, DEFAULT_SIGN_NAME
 from ..phone_notifications.exceptions import FailedToSendSMS, FailedToStartVerification
 
 
@@ -35,20 +33,23 @@ class MOCloudSMS:
         )
         return Dysmsapi20170525Client(config)
 
-    def send_sms_notification(self, number, parmas):        
+    def send_sms_notification(self, number, parmas):
         send_sms_request = dysmsapi_20170525_models.SendSmsRequest(
             phone_numbers=number,
             sign_name=DEFAULT_SIGN_NAME,
-            template_code=DEFAULT_SMS_VERTIFICATOIN_TEMPLATE,
+            template_code=DEFAULT_SMS_NOTIFICATION_TEMPLATE,
             template_param=parmas
         )
         try:
             # 复制代码运行请自行打印 API 的返回值
-            self.sms_client.send_sms_with_options(
+            resp = self.sms_client.send_sms_with_options(
                 send_sms_request, util_models.RuntimeOptions())
-            logger.info(f"send sms notification [{parmas}] to [{number}] success")
+            print(f"use tmpl:{send_sms_request.template_code} received code:{resp.body.code}, msg:{resp.body.message}")
+            logger.info(
+                f"send sms notification [{parmas}] to [{number}] success")
         except Exception as error:
-            logger.error(f"send sms notification [{parmas}] to [{number}] failed")
+            logger.error(
+                f"send sms notification [{parmas}] to [{number}] failed")
             # 错误 message
             print(error.message)
             # 诊断地址
@@ -67,13 +68,15 @@ class MOCloudSMS:
         )
         runtime = util_models.RuntimeOptions()
         try:
-            resp=self.sms_client.send_sms_with_options(send_sms_request, runtime)
-            logger.info(f"send verification code [{code}] to [{number}] success")
+            resp = self.sms_client.send_sms_with_options(
+                send_sms_request, runtime)
+            logger.info(
+                f"send verification code [{code}] to [{number}] success")
         except Exception as error:
-            logger.error(f"send verification code [{code}] to [{number}] failed")
+            logger.error(
+                f"send verification code [{code}] to [{number}] failed")
             # 错误 message
             print(error.message)
             # 诊断地址
             print(error.data.get("Recommend"))
             UtilClient.assert_as_string(error.message)
-            

@@ -1,6 +1,7 @@
 import logging
 from typing import Optional
 
+import pytz
 import requests
 from django.conf import settings
 
@@ -230,8 +231,11 @@ class PhoneBackend:
 
         if PHONE_PROVIDER == "mocloud":
             # in mocloud alert, message is actually template parmas (json)
+            env_name = f"{alert_group.channel.short_name}"
+            alert_time = f"{alert_group.started_at.astimezone(pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')}"
+            alert_name = f"{alert_group.web_title_cache}"
             parmasStr = '{"cluster_env": "%s","alert_time": "%s","alert_name": "%s"}' % (
-                alert_group.channel.short_name, alert_group.started_at, alert_group.web_title_cache)
+                env_name, alert_time, alert_name)
             # parmasStr = VMSTemplate.rander_params(alert_group)
             return self.phone_provider.send_notification_sms(user.verified_phone_number, parmasStr)
 
