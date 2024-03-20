@@ -11,9 +11,9 @@ from apps.mocloud.mocloud_template import DEFAULT_VMS_ALERT_TEMPLATE,read_passwo
 class MOCloudVMS:
     def __init__(self):
         ALIBABA_CLOUD_ACCESS_KEY_ID = read_password_from_file(
-            "/var/ob-irm/ALIBABA_CLOUD_ACCESS_KEY_ID")
+            os.environ['ACCESS_KEY_FILE'])
         ALIBABA_CLOUD_ACCESS_KEY_SECRET = read_password_from_file(
-            "/var/ob-irm/ALIBABA_CLOUD_ACCESS_KEY_SECRET")
+            os.environ['SECRET_KEY_FILE'])
         self.vms_client = MOCloudVMS.create_client(
             ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET)
 
