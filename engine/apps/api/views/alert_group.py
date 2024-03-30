@@ -277,6 +277,7 @@ class AlertGroupView(
     pagination_class = AlertGroupCursorPaginator
 
     filter_backends = [SearchFilter, filters.DjangoFilterBackend]
+    search_fields = ["=public_primary_key", "=inside_organization_number", "web_title_cache"]
     filterset_class = AlertGroupFilter
 
     def get_serializer_class(self):
@@ -808,7 +809,8 @@ class AlertGroupView(
                 "description": f"This filter works only for last {AlertGroupFilter.FILTER_BY_INVOLVED_USERS_ALERT_GROUPS_CUTOFF} alert groups you're involved in.",
             },
         ]
-
+        
+        # label search 
         if is_labels_feature_enabled(self.request.auth.organization):
             filter_options.append(
                 {
