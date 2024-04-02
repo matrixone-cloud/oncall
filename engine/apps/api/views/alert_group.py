@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Count, Max, Q
 from django.utils import timezone
 from django_filters import rest_framework as filters
+from django.conf import settings
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
@@ -275,9 +276,8 @@ class AlertGroupView(
     serializer_class = AlertGroupSerializer
 
     pagination_class = AlertGroupCursorPaginator
-
     filter_backends = [SearchFilter, filters.DjangoFilterBackend]
-    search_fields = ["=public_primary_key", "=inside_organization_number", "web_title_cache"]
+    search_fields = ["=public_primary_key", "=inside_organization_number", "web_title_cache"] if settings.FEATURE_ENABLE_ALERT_GROUP_SEARCH else []
     filterset_class = AlertGroupFilter
 
     def get_serializer_class(self):
