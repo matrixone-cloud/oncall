@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react';
 
-import { IconButton, VerticalGroup, HorizontalGroup, Field, Button } from '@grafana/ui';
+import { IconButton, VerticalGroup, HorizontalGroup, Field, Button, useTheme2 } from '@grafana/ui';
 import cn from 'classnames/bind';
 import dayjs from 'dayjs';
 import Draggable from 'react-draggable';
@@ -15,7 +15,7 @@ import { Schedule, Shift } from 'models/schedule/schedule.types';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { getDateTime, getUTCString } from 'pages/schedule/Schedule.helpers';
 import { useStore } from 'state/useStore';
-import { getCoords, getVar, waitForElement } from 'utils/DOM';
+import { HTML_ID, getCoords, waitForElement } from 'utils/DOM';
 import { GRAFANA_HEADER_HEIGHT } from 'utils/consts';
 import { useDebouncedCallback } from 'utils/hooks';
 
@@ -48,10 +48,11 @@ export const ScheduleOverrideForm: FC<RotationFormProps> = (props) => {
     shiftId,
     shiftStart: propsShiftStart = dayjs().startOf('day').add(1, 'day'),
     shiftEnd: propsShiftEnd,
-    shiftColor = getVar('--tag-warning'),
+    shiftColor: shiftColorProp,
   } = props;
 
   const store = useStore();
+  const theme = useTheme2();
 
   const [rotationName, setRotationName] = useState<string>(shiftId === 'new' ? 'Override' : 'Update override');
 
@@ -63,6 +64,7 @@ export const ScheduleOverrideForm: FC<RotationFormProps> = (props) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
+  const shiftColor = shiftColorProp || theme.colors.warning.main;
 
   const updateShiftStart = useCallback(
     (value) => {
@@ -75,20 +77,19 @@ export const ScheduleOverrideForm: FC<RotationFormProps> = (props) => {
   );
 
   useEffect(() => {
-    if (isOpen) {
-      waitForElement('#overrides-list').then((elm) => {
+    (async () => {
+      if (isOpen) {
+        const elm = await waitForElement(`#${HTML_ID.SCHEDULE_OVERRIDES_AND_SWAPS}`);
         const modal = document.querySelector(`.${cx('draggable')}`) as HTMLDivElement;
-
         const coords = getCoords(elm);
-
         const offsetTop = Math.min(
           Math.max(coords.top - modal?.offsetHeight - 10, GRAFANA_HEADER_HEIGHT + 10),
           document.body.offsetHeight - modal?.offsetHeight - 10
         );
 
         setOffsetTop(offsetTop);
-      });
-    }
+      }
+    })();
   }, [isOpen]);
 
   const [userGroups, setUserGroups] = useState([[]]);
@@ -130,29 +131,23 @@ export const ScheduleOverrideForm: FC<RotationFormProps> = (props) => {
     [shiftId, params, shift]
   );
 
-  const handleDeleteClick = useCallback(() => {
-    store.scheduleStore.deleteOncallShift(shiftId).then(() => {
-      onHide();
-
-      onDelete();
-    });
+  const handleDeleteClick = useCallback(async () => {
+    await store.scheduleStore.deleteOncallShift(shiftId);
+    onHide();
+    onDelete();
   }, []);
 
-  const handleCreate = useCallback(() => {
-    if (shiftId === 'new') {
-      store.scheduleStore
-        .createRotation(scheduleId, true, params)
-        .then(() => {
-          onCreate();
-        })
-        .catch(onError);
-    } else {
-      store.scheduleStore
-        .updateRotation(shiftId, params)
-        .then(() => {
-          onUpdate();
-        })
-        .catch(onError);
+  const handleCreate = useCallback(async () => {
+    try {
+      if (shiftId === 'new') {
+        await store.scheduleStore.createRotation(scheduleId, true, params);
+        onCreate();
+      } else {
+        await store.scheduleStore.updateRotation(shiftId, params);
+        onUpdate();
+      }
+    } catch (err) {
+      onError(err);
     }
   }, [scheduleId, shiftId, params]);
 
@@ -162,24 +157,36 @@ export const ScheduleOverrideForm: FC<RotationFormProps> = (props) => {
     }
   }, []);
 
-  const updatePreview = () => {
+  const updatePreview = async () => {
     setErrors({});
 
-    store.scheduleStore
-      .updateRotationPreview(scheduleId, shiftId, store.timezoneStore.calendarStartDate, true, params)
-      .catch(onError)
-      .finally(() => {
+    try {
+      await store.scheduleStore.updateRotationPreview(
+        scheduleId,
+        shiftId,
+        store.timezoneStore.calendarStartDate,
+        true,
+        params
+      );
+    } catch (err) {
+      onError(err);
+    } finally {
+      // wait until a scroll to the "Overrides and swaps" happened
+      setTimeout(() => {
         setIsOpen(true);
-      });
+      }, 100);
+    }
   };
 
   const onError = useCallback((error) => {
-    setErrors(error.response.data);
+    if (error.response) {
+      setErrors(error.response.data);
+    }
   }, []);
 
   const handleChange = useDebouncedCallback(updatePreview, 200);
 
-  useEffect(handleChange, [params, store.timezoneStore.calendarStartDate]);
+  useEffect(handleChange, [params, store.timezoneStore.calendarStartDate, store.timezoneStore.selectedTimezoneOffset]);
 
   const isFormValid = useMemo(() => !Object.keys(errors).length, [errors]);
 

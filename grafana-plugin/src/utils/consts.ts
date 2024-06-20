@@ -77,4 +77,13 @@ export const TEXT_ELLIPSIS_CLASS = 'overflow-child';
 export const INCIDENT_HORIZONTAL_SCROLLING_STORAGE = 'isIncidentalTableHorizontalScrolling';
 export const IRM_TAB = 'IRM';
 
-export const URL_REGEX = /^((https?|ftp|smtp):\/\/)?(www.)?[a-z0-9]+\.[a-z]+(\/[a-zA-Z0-9#]+\/?)*$/;
+export enum OnCallAGStatus {
+  Firing = 'firing',
+  Resolved = 'resolved',
+  Silenced = 'silenced',
+  Acknowledged = 'acknowledged',
+}
+
+export const GENERIC_ERROR = 'An error has occurred. Please try again';
+
+export const INTEGRATION_SERVICENOW = 'servicenow';

@@ -39,6 +39,24 @@ export interface paths {
     patch: operations['alert_receive_channels_partial_update'];
     trace?: never;
   };
+  '/alert_receive_channels/{id}/api_token/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Internal API endpoints for alert receive channels (integrations). */
+    get: operations['alert_receive_channels_api_token_retrieve'];
+    put?: never;
+    /** @description Internal API endpoints for alert receive channels (integrations). */
+    post: operations['alert_receive_channels_api_token_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/alert_receive_channels/{id}/change_team/': {
     parameters: {
       query?: never;
@@ -68,6 +86,42 @@ export interface paths {
     /** @description Internal API endpoints for alert receive channels (integrations). */
     post: operations['alert_receive_channels_connect_contact_point_create'];
     delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/alert_receive_channels/{id}/connected_alert_receive_channels/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Internal API endpoints for alert receive channels (integrations). */
+    get: operations['alert_receive_channels_connected_alert_receive_channels_retrieve'];
+    put?: never;
+    /** @description Internal API endpoints for alert receive channels (integrations). */
+    post: operations['alert_receive_channels_connected_alert_receive_channels_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/alert_receive_channels/{id}/connected_alert_receive_channels/{connected_alert_receive_channel_id}/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** @description Internal API endpoints for alert receive channels (integrations). */
+    put: operations['alert_receive_channels_connected_alert_receive_channels_update'];
+    post?: never;
+    /** @description Internal API endpoints for alert receive channels (integrations). */
+    delete: operations['alert_receive_channels_connected_alert_receive_channels_destroy'];
     options?: never;
     head?: never;
     patch?: never;
@@ -209,6 +263,23 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  '/alert_receive_channels/{id}/status_options/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Internal API endpoints for alert receive channels (integrations). */
+    get: operations['alert_receive_channels_status_options_retrieve'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   '/alert_receive_channels/{id}/stop_maintenance/': {
     parameters: {
       query?: never;
@@ -220,6 +291,23 @@ export interface paths {
     put?: never;
     /** @description Internal API endpoints for alert receive channels (integrations). */
     post: operations['alert_receive_channels_stop_maintenance_create'];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/alert_receive_channels/{id}/test_connection/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Internal API endpoints for alert receive channels (integrations). */
+    post: operations['alert_receive_channels_test_connection_create_2'];
     delete?: never;
     options?: never;
     head?: never;
@@ -324,6 +412,23 @@ export interface paths {
     get: operations['alert_receive_channels_integration_options_list'];
     put?: never;
     post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/alert_receive_channels/test_connection/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** @description Internal API endpoints for alert receive channels (integrations). */
+    post: operations['alert_receive_channels_test_connection_create'];
     delete?: never;
     options?: never;
     head?: never;
@@ -718,7 +823,7 @@ export interface paths {
       cookie?: never;
     };
     /** @description Retrieve a list of valid silence options */
-    get: operations['alertgroups_silence_options_retrieve'];
+    get: operations['alertgroups_silence_options_list'];
     put?: never;
     post?: never;
     delete?: never;
@@ -736,6 +841,39 @@ export interface paths {
     };
     /** @description Return number of alert groups capped at 100001 */
     get: operations['alertgroups_stats_retrieve'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/complete/{backend}/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** @description Authentication complete view */
+    get: operations['complete_retrieve'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/disconnect/{backend}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['disconnect_retrieve'];
     put?: never;
     post?: never;
     delete?: never;
@@ -841,6 +979,38 @@ export interface paths {
     };
     /** @description List of labels keys */
     get: operations['labels_keys_list'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/login/{backend}': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['login_retrieve'];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  '/login/{backend}/': {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get: operations['login_retrieve_2'];
     put?: never;
     post?: never;
     delete?: never;
@@ -1154,6 +1324,7 @@ export interface components {
      * @enum {string}
      */
     ActionEnum: 'acknowledge' | 'resolve' | 'silence' | 'restart';
+    AdditionalSettingsField: components['schemas']['Settings'];
     Alert: {
       readonly id: string;
       /** Format: uri */
@@ -1207,6 +1378,12 @@ export interface components {
       team: string | null;
       grafana_incident_id?: string | null;
       readonly labels: components['schemas']['AlertGroupLabel'][];
+      readonly permalinks: {
+        slack: string | null;
+        slack_app: string | null;
+        telegram: string | null;
+        web: string;
+      };
       readonly alerts: components['schemas']['Alert'][];
       readonly render_after_resolve_report_json: {
         time: string;
@@ -1223,11 +1400,6 @@ export interface components {
         };
       }[];
       readonly slack_permalink: string | null;
-      readonly permalinks: {
-        slack: string | null;
-        telegram: string | null;
-        web: string;
-      };
       /** Format: date-time */
       readonly last_alert_at: string;
       readonly paged_users: {
@@ -1238,6 +1410,12 @@ export interface components {
         avatar: string;
         avatar_full: string;
         important: boolean;
+      }[];
+      readonly external_urls: {
+        integration: string;
+        integration_type: string;
+        external_id: string;
+        url: string;
       }[];
     };
     AlertGroupAttach: {
@@ -1312,6 +1490,12 @@ export interface components {
       team: string | null;
       grafana_incident_id?: string | null;
       readonly labels: components['schemas']['AlertGroupLabel'][];
+      readonly permalinks: {
+        slack: string | null;
+        slack_app: string | null;
+        telegram: string | null;
+        web: string;
+      };
     };
     AlertGroupResolve: {
       resolution_note?: string | null;
@@ -1409,10 +1593,15 @@ export interface components {
       alert_group_labels?: components['schemas']['IntegrationAlertGroupLabels'];
       /** Format: date-time */
       readonly alertmanager_v2_migrated_at: string | null;
+      additional_settings?: components['schemas']['AdditionalSettingsField'] | null;
     };
     AlertReceiveChannelConnectContactPoint: {
       datasource_uid: string;
       contact_point_name: string;
+    };
+    AlertReceiveChannelConnectedChannel: {
+      readonly alert_receive_channel: components['schemas']['FastAlertReceiveChannel'];
+      backsync: boolean;
     };
     AlertReceiveChannelConnectedContactPoints: {
       uid: string;
@@ -1423,10 +1612,57 @@ export interface components {
       name: string;
       notification_connected: boolean;
     };
+    AlertReceiveChannelConnection: {
+      readonly source_alert_receive_channels: components['schemas']['AlertReceiveChannelSourceChannel'][];
+      readonly connected_alert_receive_channels: components['schemas']['AlertReceiveChannelConnectedChannel'][];
+    };
     AlertReceiveChannelContactPoints: {
       uid: string;
       name: string;
       contact_points: string[];
+    };
+    AlertReceiveChannelCreate: {
+      readonly id: string;
+      readonly description: string | null;
+      description_short?: string | null;
+      integration: components['schemas']['IntegrationEnum'];
+      readonly smile_code: string;
+      verbal_name?: string | null;
+      readonly author: string;
+      readonly organization: string;
+      team?: string | null;
+      /** Format: date-time */
+      readonly created_at: string;
+      readonly integration_url: string | null;
+      readonly alert_count: number;
+      readonly alert_groups_count: number;
+      allow_source_based_resolving?: boolean;
+      readonly instructions: string;
+      readonly is_able_to_autoresolve: boolean;
+      readonly default_channel_filter: string | null;
+      readonly demo_alert_enabled: boolean;
+      readonly maintenance_mode:
+        | (components['schemas']['MaintenanceModeEnum'] | components['schemas']['NullEnum'])
+        | null;
+      readonly maintenance_till: number | null;
+      readonly heartbeat: components['schemas']['IntegrationHeartBeat'] | null;
+      readonly is_available_for_integration_heartbeat: boolean;
+      readonly allow_delete: boolean;
+      readonly demo_alert_payload: {
+        [key: string]: unknown;
+      };
+      readonly routes_count: number;
+      readonly connected_escalations_chains_count: number;
+      readonly is_based_on_alertmanager: boolean;
+      readonly inbound_email: string;
+      readonly is_legacy: boolean;
+      labels?: components['schemas']['LabelPair'][];
+      alert_group_labels?: components['schemas']['IntegrationAlertGroupLabels'];
+      /** Format: date-time */
+      readonly alertmanager_v2_migrated_at: string | null;
+      additional_settings?: components['schemas']['AdditionalSettingsField'] | null;
+      /** @default true */
+      create_default_webhooks: boolean;
     };
     AlertReceiveChannelCreateContactPoint: {
       datasource_uid: string;
@@ -1450,6 +1686,10 @@ export interface components {
       featured: boolean;
       featured_tag_name: string | null;
     };
+    AlertReceiveChannelNewConnection: {
+      id: string;
+      backsync: boolean;
+    };
     AlertReceiveChannelPolymorphic:
       | components['schemas']['AlertReceiveChannel']
       | components['schemas']['FilterAlertReceiveChannel'];
@@ -1457,6 +1697,10 @@ export interface components {
       demo_alert_payload?: {
         [key: string]: unknown;
       } | null;
+    };
+    AlertReceiveChannelSourceChannel: {
+      readonly alert_receive_channel: components['schemas']['FastAlertReceiveChannel'];
+      backsync: boolean;
     };
     AlertReceiveChannelStartMaintenance: {
       mode: components['schemas']['ModeEnum'];
@@ -1501,6 +1745,7 @@ export interface components {
       alert_group_labels?: components['schemas']['IntegrationAlertGroupLabels'];
       /** Format: date-time */
       readonly alertmanager_v2_migrated_at: string | null;
+      additional_settings?: components['schemas']['AdditionalSettingsField'] | null;
     };
     /** @enum {integer} */
     CloudConnectionStatusEnum: 0 | 1 | 2 | 3;
@@ -1560,6 +1805,9 @@ export interface components {
       value: string;
       display_name: string;
     };
+    GoogleCalendarSettings: {
+      oncall_schedules_to_consider_for_shift_swaps?: string[] | null;
+    };
     /** @description Alert group labels configuration for the integration. See AlertReceiveChannel.alert_group_labels for details. */
     IntegrationAlertGroupLabels: {
       inheritable: {
@@ -1585,6 +1833,7 @@ export interface components {
      *     * `slack_channel` - Slack Channel
      *     * `zabbix` - Zabbix
      *     * `direct_paging` - Direct paging
+     *     * `servicenow` - ServiceNow
      *     * `amazon_sns` - Amazon SNS
      *     * `stackdriver` - Stackdriver
      *     * `curler` - Curler
@@ -1600,7 +1849,6 @@ export interface components {
      *     * `jira` - Jira
      *     * `zendesk` - Zendesk
      *     * `appdynamics` - AppDynamics
-     *     * `servicenow` - ServiceNow
      * @enum {string}
      */
     IntegrationEnum:
@@ -1620,6 +1868,7 @@ export interface components {
       | 'slack_channel'
       | 'zabbix'
       | 'direct_paging'
+      | 'servicenow'
       | 'amazon_sns'
       | 'stackdriver'
       | 'curler'
@@ -1634,8 +1883,7 @@ export interface components {
       | 'uptimerobot'
       | 'jira'
       | 'zendesk'
-      | 'appdynamics'
-      | 'servicenow';
+      | 'appdynamics';
     IntegrationHeartBeat: {
       readonly id: string;
       timeout_seconds: components['schemas']['TimeoutSecondsEnum'];
@@ -1647,6 +1895,10 @@ export interface components {
        *     If first heartbeat signal was not send it means that configuration was not finished and status not ok. */
       readonly status: boolean;
       readonly instruction: string;
+    };
+    IntegrationTokenPostResponse: {
+      token: string;
+      usage: string;
     };
     Key: {
       id: string;
@@ -1712,6 +1964,7 @@ export interface components {
       };
       readonly cloud_connection_status: components['schemas']['CloudConnectionStatusEnum'] | null;
       hide_phone_number?: boolean;
+      readonly has_google_oauth2_connected: boolean;
     };
     /**
      * @description * `0` - Debug
@@ -1808,6 +2061,7 @@ export interface components {
       alert_group_labels?: components['schemas']['IntegrationAlertGroupLabels'];
       /** Format: date-time */
       readonly alertmanager_v2_migrated_at?: string | null;
+      additional_settings?: components['schemas']['AdditionalSettingsField'] | null;
     };
     PatchedUser: {
       readonly pk?: string;
@@ -1842,7 +2096,9 @@ export interface components {
       };
       readonly cloud_connection_status?: components['schemas']['CloudConnectionStatusEnum'] | null;
       hide_phone_number?: boolean;
+      readonly has_google_oauth2_connected?: boolean;
       readonly is_currently_oncall?: boolean;
+      google_calendar_settings?: components['schemas']['GoogleCalendarSettings'];
     };
     PreviewTemplateRequest: {
       template_body?: string | null;
@@ -1875,6 +2131,20 @@ export interface components {
      * @enum {integer}
      */
     RoleEnum: 0 | 1 | 2 | 3;
+    Settings: {
+      instance_url: string;
+      username: string;
+      password: string;
+      /** @default {
+       *       "firing": null,
+       *       "acknowledged": null,
+       *       "resolved": null,
+       *       "silenced": null
+       *     } */
+      state_mapping: components['schemas']['StateMapping'];
+      /** @default false */
+      is_configured: boolean;
+    };
     ShortAlertGroup: {
       readonly pk: string;
       readonly render_for_web:
@@ -1894,6 +2164,12 @@ export interface components {
       readonly avatar: string;
       readonly name: string;
       readonly display_name: string | null;
+    };
+    StateMapping: {
+      firing: unknown[] | null;
+      acknowledged: unknown[] | null;
+      resolved: unknown[] | null;
+      silenced: unknown[] | null;
     };
     TelegramToUserConnector: {
       telegram_nick_name?: string | null;
@@ -1947,7 +2223,9 @@ export interface components {
       };
       readonly cloud_connection_status: components['schemas']['CloudConnectionStatusEnum'] | null;
       hide_phone_number?: boolean;
+      readonly has_google_oauth2_connected: boolean;
       readonly is_currently_oncall: boolean;
+      google_calendar_settings?: components['schemas']['GoogleCalendarSettings'];
     };
     UserExportTokenGetResponse: {
       /** Format: date-time */
@@ -2037,6 +2315,7 @@ export interface operations {
   alert_receive_channels_list: {
     parameters: {
       query?: {
+        id_ne?: string[];
         /** @description * `alertmanager` - Alertmanager
          *     * `legacy_alertmanager` - (Legacy) AlertManager
          *     * `grafana` - Grafana
@@ -2053,6 +2332,7 @@ export interface operations {
          *     * `slack_channel` - Slack Channel
          *     * `zabbix` - Zabbix
          *     * `direct_paging` - Direct paging
+         *     * `servicenow` - ServiceNow
          *     * `amazon_sns` - Amazon SNS
          *     * `stackdriver` - Stackdriver
          *     * `curler` - Curler
@@ -2067,8 +2347,7 @@ export interface operations {
          *     * `uptimerobot` - UptimeRobot
          *     * `jira` - Jira
          *     * `zendesk` - Zendesk
-         *     * `appdynamics` - AppDynamics
-         *     * `servicenow` - ServiceNow */
+         *     * `appdynamics` - AppDynamics */
         integration?: (
           | 'alertmanager'
           | 'amazon_sns'
@@ -2119,6 +2398,7 @@ export interface operations {
          *     * `slack_channel` - Slack Channel
          *     * `zabbix` - Zabbix
          *     * `direct_paging` - Direct paging
+         *     * `servicenow` - ServiceNow
          *     * `amazon_sns` - Amazon SNS
          *     * `stackdriver` - Stackdriver
          *     * `curler` - Curler
@@ -2133,8 +2413,7 @@ export interface operations {
          *     * `uptimerobot` - UptimeRobot
          *     * `jira` - Jira
          *     * `zendesk` - Zendesk
-         *     * `appdynamics` - AppDynamics
-         *     * `servicenow` - ServiceNow */
+         *     * `appdynamics` - AppDynamics */
         integration_ne?: (
           | 'alertmanager'
           | 'amazon_sns'
@@ -2205,9 +2484,9 @@ export interface operations {
     };
     requestBody: {
       content: {
-        'application/json': components['schemas']['AlertReceiveChannel'];
-        'application/x-www-form-urlencoded': components['schemas']['AlertReceiveChannel'];
-        'multipart/form-data': components['schemas']['AlertReceiveChannel'];
+        'application/json': components['schemas']['AlertReceiveChannelCreate'];
+        'application/x-www-form-urlencoded': components['schemas']['AlertReceiveChannelCreate'];
+        'multipart/form-data': components['schemas']['AlertReceiveChannelCreate'];
       };
     };
     responses: {
@@ -2216,7 +2495,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['AlertReceiveChannel'];
+          'application/json': components['schemas']['AlertReceiveChannelCreate'];
         };
       };
     };
@@ -2320,6 +2599,49 @@ export interface operations {
       };
     };
   };
+  alert_receive_channels_api_token_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description A string identifying this alert receive channel. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  alert_receive_channels_api_token_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description A string identifying this alert receive channel. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['IntegrationTokenPostResponse'];
+        };
+      };
+    };
+  };
   alert_receive_channels_change_team_update: {
     parameters: {
       query: {
@@ -2363,6 +2685,107 @@ export interface operations {
     responses: {
       /** @description No response body */
       200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  alert_receive_channels_connected_alert_receive_channels_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description A string identifying this alert receive channel. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AlertReceiveChannelConnection'];
+        };
+      };
+    };
+  };
+  alert_receive_channels_connected_alert_receive_channels_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description A string identifying this alert receive channel. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AlertReceiveChannelNewConnection'][];
+        'application/x-www-form-urlencoded': components['schemas']['AlertReceiveChannelNewConnection'][];
+        'multipart/form-data': components['schemas']['AlertReceiveChannelNewConnection'][];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AlertReceiveChannelConnection'];
+        };
+      };
+    };
+  };
+  alert_receive_channels_connected_alert_receive_channels_update: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        connected_alert_receive_channel_id: string;
+        /** @description A string identifying this alert receive channel. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AlertReceiveChannelConnectedChannel'];
+        'application/x-www-form-urlencoded': components['schemas']['AlertReceiveChannelConnectedChannel'];
+        'multipart/form-data': components['schemas']['AlertReceiveChannelConnectedChannel'];
+      };
+    };
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': components['schemas']['AlertReceiveChannelConnectedChannel'];
+        };
+      };
+    };
+  };
+  alert_receive_channels_connected_alert_receive_channels_destroy: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        connected_alert_receive_channel_id: string;
+        /** @description A string identifying this alert receive channel. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      204: {
         headers: {
           [name: string]: unknown;
         };
@@ -2440,7 +2863,7 @@ export interface operations {
     };
     responses: {
       /** @description No response body */
-      200: {
+      201: {
         headers: {
           [name: string]: unknown;
         };
@@ -2578,6 +3001,28 @@ export interface operations {
       };
     };
   };
+  alert_receive_channels_status_options_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description A string identifying this alert receive channel. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          'application/json': string[][];
+        };
+      };
+    };
+  };
   alert_receive_channels_stop_maintenance_create: {
     parameters: {
       query?: never;
@@ -2589,6 +3034,33 @@ export interface operations {
       cookie?: never;
     };
     requestBody?: never;
+    responses: {
+      /** @description No response body */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  alert_receive_channels_test_connection_create_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        /** @description A string identifying this alert receive channel. */
+        id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: {
+      content: {
+        'application/json': components['schemas']['AlertReceiveChannelUpdate'];
+        'application/x-www-form-urlencoded': components['schemas']['AlertReceiveChannelUpdate'];
+        'multipart/form-data': components['schemas']['AlertReceiveChannelUpdate'];
+      };
+    };
     responses: {
       /** @description No response body */
       200: {
@@ -2780,6 +3252,30 @@ export interface operations {
         content: {
           'application/json': components['schemas']['AlertReceiveChannelIntegrationOptions'][];
         };
+      };
+    };
+  };
+  alert_receive_channels_test_connection_create: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AlertReceiveChannel'];
+        'application/x-www-form-urlencoded': components['schemas']['AlertReceiveChannel'];
+        'multipart/form-data': components['schemas']['AlertReceiveChannel'];
+      };
+    };
+    responses: {
+      /** @description No response body */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };
@@ -3269,7 +3765,7 @@ export interface operations {
       };
     };
   };
-  alertgroups_silence_options_retrieve: {
+  alertgroups_silence_options_list: {
     parameters: {
       query?: never;
       header?: never;
@@ -3283,7 +3779,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          'application/json': components['schemas']['AlertGroupSilenceOptions'];
+          'application/json': components['schemas']['AlertGroupSilenceOptions'][];
         };
       };
     };
@@ -3327,6 +3823,46 @@ export interface operations {
       };
     };
   };
+  complete_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backend: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  disconnect_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backend: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
   features_retrieve: {
     parameters: {
       query?: never;
@@ -3350,6 +3886,7 @@ export interface operations {
             | 'grafana_cloud_connection'
             | 'grafana_alerting_v2'
             | 'labels'
+            | 'google_oauth2'
           )[];
         };
       };
@@ -3521,6 +4058,46 @@ export interface operations {
         content: {
           'application/json': components['schemas']['LabelKey'][];
         };
+      };
+    };
+  };
+  login_retrieve: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backend: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+    };
+  };
+  login_retrieve_2: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        backend: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description No response body */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
     };
   };

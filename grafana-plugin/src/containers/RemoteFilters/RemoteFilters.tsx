@@ -14,7 +14,7 @@ import {
 } from '@grafana/ui';
 import { capitalCase } from 'change-case';
 import cn from 'classnames/bind';
-import { debounce, isEmpty, isUndefined, omitBy, pickBy } from 'lodash-es';
+import { debounce, isUndefined, omitBy, pickBy } from 'lodash-es';
 import { observer } from 'mobx-react';
 import moment from 'moment-timezone';
 import Emoji from 'react-emoji-render';
@@ -29,6 +29,8 @@ import { SelectOption, WithStoreProps } from 'state/types';
 import { withMobXProviderContext } from 'state/withStore';
 import { LocationHelper } from 'utils/LocationHelper';
 import { PAGE } from 'utils/consts';
+import { convertTimerangeToFilterValue, getValueForDateRangeFilterType } from 'utils/datetime';
+import { allFieldsEmpty } from 'utils/utils';
 
 import { parseFilters } from './RemoteFilters.helpers';
 import { FilterOption } from './RemoteFilters.types';
@@ -46,7 +48,7 @@ interface RemoteFiltersProps extends WithStoreProps {
   grafanaTeamStore: GrafanaTeamStore;
   skipFilterOptionFn?: (filterOption: FilterOption) => boolean;
 }
-interface RemoteFiltersState {
+export interface RemoteFiltersState {
   filterOptions?: FilterOption[];
   filters: FilterOption[];
   values: Record<string, any>;
@@ -102,7 +104,7 @@ class _RemoteFilters extends Component<RemoteFiltersProps, RemoteFiltersState> {
 
     let { filters, values } = parseFilters({ ...query, ...filtersStore.globalValues }, filterOptions, query);
 
-    if (isEmpty(values)) {
+    if (allFieldsEmpty(values)) {
       ({ filters, values } = parseFilters(defaultFilters, filterOptions, query));
     }
 
@@ -313,22 +315,11 @@ class _RemoteFilters extends Component<RemoteFiltersProps, RemoteFiltersState> {
         );
 
       case 'daterange':
-        const dates = values[filter.name] ? values[filter.name].split('/') : undefined;
-
-        const value = {
-          from: dates ? moment(dates[0] + 'Z') : undefined,
-          to: dates ? moment(dates[1] + 'Z') : undefined,
-          raw: {
-            from: dates ? dates[0] : '',
-            to: dates ? dates[1] : '',
-          },
-        };
+        const value = getValueForDateRangeFilterType(values[filter.name]);
 
         return (
           <TimeRangeInput
             timeZone={moment.tz.guess()}
-            autoFocus={autoFocus}
-            // @ts-ignore
             value={value}
             onChange={this.getDateRangeFilterChangeHandler(filter.name)}
             hideTimeZone
@@ -386,9 +377,7 @@ class _RemoteFilters extends Component<RemoteFiltersProps, RemoteFiltersState> {
 
   getDateRangeFilterChangeHandler = (name: FilterOption['name']) => {
     return (timeRange: TimeRange) => {
-      const value =
-        timeRange.from.utc().format('YYYY-MM-DDTHH:mm:ss') + '/' + timeRange.to.utc().format('YYYY-MM-DDTHH:mm:ss');
-
+      const value = convertTimerangeToFilterValue(timeRange);
       this.onFiltersValueChange(name, value);
     };
   };

@@ -139,6 +139,16 @@ def getenv_integer(variable_name: str, default: int) -> int:
         return default
 
 
+def getenv_float(variable_name: str, default: float) -> float:
+    value = os.environ.get(variable_name)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
 def getenv_list(variable_name: str, default: list) -> list:
     value = os.environ.get(variable_name)
     if value is None:
@@ -167,7 +177,7 @@ def isoformat_with_tz_suffix(value):
     Default python datetime.isoformat() return tz offset like +00:00 instead of military tz suffix (e.g.Z for UTC)".
     On the other hand DRF returns datetime with military tz suffix.
     This utility function exists to return consistent datetime string in api.
-    Is is copied from DRF DateTimeField.to_representation
+    It is copied from DRF DateTimeField.to_representation
     """
     value = value.isoformat()
     if value.endswith("+00:00"):
@@ -176,7 +186,7 @@ def isoformat_with_tz_suffix(value):
 
 
 def is_string_with_visible_characters(string):
-    return type(string) == str and not string.isspace() and not string == ""
+    return type(string) is str and not string.isspace() and not string == ""
 
 
 def str_or_backup(string, backup):

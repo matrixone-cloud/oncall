@@ -10,9 +10,26 @@
   &__box:first-child {
     margin-right: 8px;
   }
+
   &__box:last-child {
     margin-left: 8px;
   }
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  
+    &__box:first-child {
+      margin-right: 0px;
+      margin-bottom: 8px;
+    }
+  
+    &__box:last-child {
+      margin-left: 0px;
+      margin-top: 8px;
+    }
+  } 
 }
 
 .notification-buttons {
@@ -64,8 +81,8 @@
     display: block;
   }
 
-  i { // Overwrite Grafana's loading icon
+  i {
+    // Overwrite Grafana's loading icon
     font-size: 32px;
   }
-
 }

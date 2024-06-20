@@ -1,60 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`PluginConfigPage If onCallApiUrl is not set in the plugin's meta jsonData, and ONCALL_API_URL is passed in process.env, and there is an error calling selfHostedInstallPlugin, it sets an error message 1`] = `
-<div>
-  <legend
-    class="css-1w9pvsj"
-  >
-    Configure Grafana OnCall
-  </legend>
-  <p>
-    This page will help you configure the OnCall plugin 👋
-  </p>
-  <pre
-    data-testid="status-message-block"
-  >
-    <span
-      class="root text text--undefined text--medium"
-    >
-      ohhh nooo an error msg from self hosted install plugin
-    </span>
-  </pre>
-  <div
-    class="css-ffyaiw-horizontal-group"
-    style="width: 100%; height: 100%;"
-  >
-    <div
-      class="css-18qv8yz-layoutChildrenWrapper"
-    >
-      <button
-        class="css-td06pi-button"
-        type="button"
-      >
-        <span
-          class="css-1riaxdn"
-        >
-          Retry Sync
-        </span>
-      </button>
-    </div>
-    <div
-      class="css-18qv8yz-layoutChildrenWrapper"
-    >
-      <button
-        class="css-ttl745-button"
-        type="button"
-      >
-        <span
-          class="css-1riaxdn"
-        >
-          Remove current configuration
-        </span>
-      </button>
-    </div>
-  </div>
-</div>
-`;
-
 exports[`PluginConfigPage If onCallApiUrl is not set in the plugin's meta jsonData, or in process.env, updatePluginStatus is not called, and the configuration form is shown 1`] = `
 <div>
   <legend
@@ -76,7 +21,7 @@ exports[`PluginConfigPage If onCallApiUrl is not set in the plugin's meta jsonDa
         1. Launch the OnCall backend
       </p>
       <span
-        class="root text text--secondary text--medium"
+        class="css-77ouhj--secondary css-77ouhj--medium css-1287p17"
       >
         Run hobby, dev or production backend. See
          
@@ -86,7 +31,7 @@ exports[`PluginConfigPage If onCallApiUrl is not set in the plugin's meta jsonDa
           target="_blank"
         >
           <span
-            class="root text text--link text--medium"
+            class="css-77ouhj--link css-77ouhj--medium css-1287p17"
           >
             here
           </span>
@@ -102,7 +47,7 @@ exports[`PluginConfigPage If onCallApiUrl is not set in the plugin's meta jsonDa
         2. Let us know the base URL of your OnCall API
       </p>
       <span
-        class="root text text--secondary text--medium"
+        class="css-77ouhj--secondary css-77ouhj--medium css-1287p17"
       >
         The OnCall backend must be reachable from your Grafana installation. Some examples are:
         <br />
@@ -172,7 +117,7 @@ exports[`PluginConfigPage If onCallApiUrl is set, and updatePluginStatus returns
     data-testid="status-message-block"
   >
     <span
-      class="root text text--undefined text--medium"
+      class="css-77ouhj--undefined css-77ouhj--medium css-1287p17"
     >
       ohhh nooo a plugin connection error
     </span>
@@ -224,43 +169,45 @@ exports[`PluginConfigPage It doesn't make any network calls if the plugin config
     data-testid="status-message-block"
   >
     <span
-      class="root text text--undefined text--medium"
+      class="css-77ouhj--undefined css-77ouhj--medium css-1287p17"
     >
       Connected to OnCall (v1.2.3, OpenSource)
     </span>
   </pre>
-  <div
-    class="css-ffyaiw-horizontal-group"
-    style="width: 100%; height: 100%;"
-  >
+  <div>
     <div
-      class="css-18qv8yz-layoutChildrenWrapper"
+      class="css-ffyaiw-horizontal-group"
+      style="width: 100%; height: 100%;"
     >
-      <a
-        class="css-td06pi-button"
-        href="/a/grafana-oncall-app/"
-        tabindex="0"
+      <div
+        class="css-18qv8yz-layoutChildrenWrapper"
       >
-        <span
-          class="css-1riaxdn"
+        <a
+          class="css-td06pi-button"
+          href="/a/grafana-oncall-app/"
+          tabindex="0"
         >
-          Open Grafana OnCall
-        </span>
-      </a>
-    </div>
-    <div
-      class="css-18qv8yz-layoutChildrenWrapper"
-    >
-      <button
-        class="css-ttl745-button"
-        type="button"
+          <span
+            class="css-1riaxdn"
+          >
+            Open Grafana OnCall
+          </span>
+        </a>
+      </div>
+      <div
+        class="css-18qv8yz-layoutChildrenWrapper"
       >
-        <span
-          class="css-1riaxdn"
+        <button
+          class="css-ttl745-button"
+          type="button"
         >
-          Remove current configuration
-        </span>
-      </button>
+          <span
+            class="css-1riaxdn"
+          >
+            Remove current configuration
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -277,43 +224,45 @@ exports[`PluginConfigPage OnCallApiUrl is set, and checkTokenAndIfPluginIsConnec
     data-testid="status-message-block"
   >
     <span
-      class="root text text--undefined text--medium"
+      class="css-77ouhj--undefined css-77ouhj--medium css-1287p17"
     >
       Connected to OnCall (v1.2.3, OpenSource)
     </span>
   </pre>
-  <div
-    class="css-ffyaiw-horizontal-group"
-    style="width: 100%; height: 100%;"
-  >
+  <div>
     <div
-      class="css-18qv8yz-layoutChildrenWrapper"
+      class="css-ffyaiw-horizontal-group"
+      style="width: 100%; height: 100%;"
     >
-      <a
-        class="css-td06pi-button"
-        href="/a/grafana-oncall-app/"
-        tabindex="0"
+      <div
+        class="css-18qv8yz-layoutChildrenWrapper"
       >
-        <span
-          class="css-1riaxdn"
+        <a
+          class="css-td06pi-button"
+          href="/a/grafana-oncall-app/"
+          tabindex="0"
         >
-          Open Grafana OnCall
-        </span>
-      </a>
-    </div>
-    <div
-      class="css-18qv8yz-layoutChildrenWrapper"
-    >
-      <button
-        class="css-ttl745-button"
-        type="button"
+          <span
+            class="css-1riaxdn"
+          >
+            Open Grafana OnCall
+          </span>
+        </a>
+      </div>
+      <div
+        class="css-18qv8yz-layoutChildrenWrapper"
       >
-        <span
-          class="css-1riaxdn"
+        <button
+          class="css-ttl745-button"
+          type="button"
         >
-          Remove current configuration
-        </span>
-      </button>
+          <span
+            class="css-1riaxdn"
+          >
+            Remove current configuration
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -330,7 +279,7 @@ exports[`PluginConfigPage OnCallApiUrl is set, and checkTokenAndIfPluginIsConnec
     data-testid="status-message-block"
   >
     <span
-      class="root text text--undefined text--medium"
+      class="css-77ouhj--undefined css-77ouhj--medium css-1287p17"
     >
       Connected to OnCall (v1.2.3, some-other-license)
     </span>
@@ -387,7 +336,7 @@ exports[`PluginConfigPage OnCallApiUrl is set, and checkTokenAndIfPluginIsConnec
     data-testid="status-message-block"
   >
     <span
-      class="root text text--undefined text--medium"
+      class="css-77ouhj--undefined css-77ouhj--medium css-1287p17"
     >
       ohhh noooo a sync issue
     </span>
@@ -442,7 +391,7 @@ exports[`PluginConfigPage Plugin reset: successful - false 1`] = `
     data-testid="status-message-block"
   >
     <span
-      class="root text text--undefined text--medium"
+      class="css-77ouhj--undefined css-77ouhj--medium css-1287p17"
     >
       There was an error resetting your plugin, try again.
     </span>
@@ -504,7 +453,7 @@ exports[`PluginConfigPage Plugin reset: successful - true 1`] = `
         1. Launch the OnCall backend
       </p>
       <span
-        class="root text text--secondary text--medium"
+        class="css-77ouhj--secondary css-77ouhj--medium css-1287p17"
       >
         Run hobby, dev or production backend. See
          
@@ -514,7 +463,7 @@ exports[`PluginConfigPage Plugin reset: successful - true 1`] = `
           target="_blank"
         >
           <span
-            class="root text text--link text--medium"
+            class="css-77ouhj--link css-77ouhj--medium css-1287p17"
           >
             here
           </span>
@@ -530,7 +479,7 @@ exports[`PluginConfigPage Plugin reset: successful - true 1`] = `
         2. Let us know the base URL of your OnCall API
       </p>
       <span
-        class="root text text--secondary text--medium"
+        class="css-77ouhj--secondary css-77ouhj--medium css-1287p17"
       >
         The OnCall backend must be reachable from your Grafana installation. Some examples are:
         <br />

@@ -30,7 +30,6 @@ enum License {
   CLOUD = 'some-other-license',
 }
 
-const SELF_HOSTED_INSTALL_PLUGIN_ERROR_MESSAGE = 'ohhh nooo an error msg from self hosted install plugin';
 const CHECK_IF_PLUGIN_IS_CONNECTED_ERROR_MESSAGE = 'ohhh nooo a plugin connection error';
 const UPDATE_PLUGIN_STATUS_ERROR_MESSAGE = 'ohhh noooo a sync issue';
 const PLUGIN_CONFIGURATION_FORM_DATA_ID = 'plugin-configuration-form';
@@ -40,13 +39,6 @@ const MOCK_PROTOCOL = 'https:';
 const MOCK_HOST = 'localhost:3000';
 const MOCK_PATHNAME = '/dkjdfjkfd';
 const MOCK_URL = `${MOCK_PROTOCOL}//${MOCK_HOST}${MOCK_PATHNAME}`;
-
-/**
- * this is just a little hack to silence a warning that we'll get until we
- * upgrade to 16.9. See also: https://github.com/facebook/react/pull/14853
- * https://github.com/testing-library/react-testing-library#suppressing-unnecessary-warnings-on-react-dom-168
- */
-const originalError = console.error;
 
 beforeEach(() => {
   delete global.window.location;
@@ -58,18 +50,10 @@ beforeEach(() => {
     href: MOCK_URL,
   } as Location;
   global.window.history.pushState = jest.fn();
-
-  console.error = (...args) => {
-    if (/Warning.*not wrapped in act/.test(args[0])) {
-      return;
-    }
-    originalError.call(console, ...args);
-  };
 });
 
 afterEach(() => {
   jest.clearAllMocks();
-  console.error = originalError;
 });
 
 const mockCheckTokenAndIfPluginIsConnected = (license: License = License.OSS) => {
@@ -194,39 +178,6 @@ describe('PluginConfigPage', () => {
     // assertions
     expect(PluginState.updatePluginStatus).not.toHaveBeenCalled();
     expect(PluginState.checkTokenAndIfPluginIsConnected).not.toHaveBeenCalled();
-    expect(component.container).toMatchSnapshot();
-  });
-
-  test("If onCallApiUrl is not set in the plugin's meta jsonData, and ONCALL_API_URL is passed in process.env, it calls selfHostedInstallPlugin", async () => {
-    // mocks
-    const processEnvOnCallApiUrl = 'onCallApiUrlFromProcessEnv';
-    process.env.ONCALL_API_URL = processEnvOnCallApiUrl;
-
-    PluginState.selfHostedInstallPlugin = jest.fn();
-    mockCheckTokenAndIfPluginIsConnected();
-
-    // test setup
-    render(<PluginConfigPage {...generateComponentProps()} />);
-
-    // assertions
-    expect(PluginState.selfHostedInstallPlugin).toHaveBeenCalledTimes(1);
-    expect(PluginState.selfHostedInstallPlugin).toHaveBeenCalledWith(processEnvOnCallApiUrl, true);
-  });
-
-  test("If onCallApiUrl is not set in the plugin's meta jsonData, and ONCALL_API_URL is passed in process.env, and there is an error calling selfHostedInstallPlugin, it sets an error message", async () => {
-    // mocks
-    const processEnvOnCallApiUrl = 'onCallApiUrlFromProcessEnv';
-    process.env.ONCALL_API_URL = processEnvOnCallApiUrl;
-
-    PluginState.selfHostedInstallPlugin = jest.fn().mockResolvedValueOnce(SELF_HOSTED_INSTALL_PLUGIN_ERROR_MESSAGE);
-
-    // test setup
-    const component = render(<PluginConfigPage {...generateComponentProps()} />);
-    await screen.findByTestId(STATUS_MESSAGE_BLOCK_DATA_ID);
-
-    // assertions
-    expect(PluginState.selfHostedInstallPlugin).toHaveBeenCalledTimes(1);
-    expect(PluginState.selfHostedInstallPlugin).toHaveBeenCalledWith(processEnvOnCallApiUrl, true);
     expect(component.container).toMatchSnapshot();
   });
 

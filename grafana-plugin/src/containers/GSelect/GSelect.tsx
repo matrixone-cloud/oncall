@@ -19,7 +19,7 @@ interface GSelectProps<Item> {
   fetchItemsFn: (query?: string) => Promise<Item[] | void>;
   fetchItemFn: (id: string) => Promise<Item | void>;
   getSearchResult: (query?: string) => Item[] | { page_size: number; count: number; results: Item[] };
-  placeholder: string;
+  placeholder?: string;
   isLoading?: boolean;
   value?: string | string[] | null;
   defaultValue?: string | string[] | null;
@@ -30,7 +30,6 @@ interface GSelectProps<Item> {
   className?: string;
   displayField?: string;
   valueField?: string;
-  showSearch?: boolean;
   allowClear?: boolean;
   isMulti?: boolean;
   showWarningIfEmptyValue?: boolean;
@@ -40,6 +39,7 @@ interface GSelectProps<Item> {
   dropdownRender?: (menu: ReactElement) => ReactElement;
   getOptionLabel?: <T>(item: SelectableValue<T>) => React.ReactNode;
   getDescription?: (item: any) => React.ReactNode;
+  parseDisplayName?: (label: string) => string;
   openMenuOnFocus?: boolean;
   width?: number | 'auto';
   icon?: string;
@@ -48,7 +48,6 @@ interface GSelectProps<Item> {
 export const GSelect = observer(<Item,>(props: GSelectProps<Item>) => {
   const {
     autoFocus,
-    showSearch = false,
     allowClear = false,
     isLoading,
     defaultOpen,
@@ -72,6 +71,7 @@ export const GSelect = observer(<Item,>(props: GSelectProps<Item>) => {
     fetchItemsFn,
     fetchItemFn,
     getSearchResult,
+    parseDisplayName,
   } = props;
 
   const onChangeCallback = useCallback(
@@ -94,23 +94,23 @@ export const GSelect = observer(<Item,>(props: GSelectProps<Item>) => {
     [propItems, onChange]
   );
 
-  const loadOptions = useDebouncedCallback((query: string, cb) => {
-    fetchItemsFn(query).then(() => {
-      const searchResult = getSearchResult(query);
-      // TODO: we need to unify interface of search results to get rid of ts-ignore
-      // @ts-ignore
-      let items = Array.isArray(searchResult.results) ? searchResult.results : searchResult;
-      if (filterOptions) {
-        items = items.filter((opt: any) => filterOptions(opt[valueField]));
-      }
-      const options = items.map((item: any) => ({
-        value: item[valueField],
-        label: get(item, displayField),
-        imgUrl: item.avatar_url,
-        description: getDescription && getDescription(item),
-      }));
-      cb(options);
-    });
+  const loadOptions = useDebouncedCallback(async (query: string, cb) => {
+    await fetchItemsFn(query);
+
+    const searchResult = getSearchResult(query);
+    // TODO: we need to unify interface of search results to get rid of ts-ignore
+    // @ts-ignore
+    let items = Array.isArray(searchResult.results) ? searchResult.results : searchResult;
+    if (filterOptions) {
+      items = items.filter((opt: any) => filterOptions(opt[valueField]));
+    }
+    const options = items.map((item: any) => ({
+      value: item[valueField],
+      label: get(item, displayField),
+      imgUrl: item.avatar_url,
+      description: getDescription && getDescription(item),
+    }));
+    cb(options);
   }, 250);
 
   const getValues = () => {
@@ -123,9 +123,13 @@ export const GSelect = observer(<Item,>(props: GSelectProps<Item>) => {
           description: getDescription && getDescription(propItems[id]),
         }));
     } else if (propItems[value as string]) {
+      const label = get(propItems[value as string], displayField)
+        ? get(propItems[value as string], displayField)
+        : 'hidden';
+
       return {
         value,
-        label: get(propItems[value as string], displayField) ? get(propItems[value as string], displayField) : 'hidden',
+        label: parseDisplayName ? parseDisplayName(label) : label,
         description: getDescription && getDescription(propItems[value as string]),
       };
     }
@@ -150,7 +154,7 @@ export const GSelect = observer(<Item,>(props: GSelectProps<Item>) => {
     <div className={cx('root', className)}>
       <Tag
         autoFocus={autoFocus}
-        isSearchable={showSearch}
+        isSearchable
         isClearable={allowClear}
         placeholder={placeholder}
         openMenuOnFocus={defaultOpen}

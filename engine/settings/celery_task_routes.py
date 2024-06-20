@@ -87,10 +87,13 @@ CELERY_TASK_ROUTES = {
     "common.oncall_gateway.tasks.unlink_slack_team_async": {"queue": "default"},
     "common.oncall_gateway.tasks.register_oncall_tenant_async": {"queue": "default"},
     "common.oncall_gateway.tasks.unregister_oncall_tenant_async": {"queue": "default"},
+    "apps.chatops_proxy.tasks.link_slack_team_async": {"queue": "default"},
+    "apps.chatops_proxy.tasks.unlink_slack_team_async": {"queue": "default"},
+    "apps.chatops_proxy.tasks.register_oncall_tenant_async": {"queue": "default"},
+    "apps.chatops_proxy.tasks.unregister_oncall_tenant_async": {"queue": "default"},
     # CRITICAL
     "apps.alerts.tasks.acknowledge_reminder.acknowledge_reminder_task": {"queue": "critical"},
     "apps.alerts.tasks.acknowledge_reminder.unacknowledge_timeout_task": {"queue": "critical"},
-    "apps.alerts.tasks.distribute_alert.distribute_alert": {"queue": "critical"},
     "apps.alerts.tasks.distribute_alert.send_alert_create_signal": {"queue": "critical"},
     "apps.alerts.tasks.escalate_alert_group.escalate_alert_group": {"queue": "critical"},
     "apps.alerts.tasks.invite_user_to_join_incident.invite_user_to_join_incident": {"queue": "critical"},
@@ -113,6 +116,8 @@ CELERY_TASK_ROUTES = {
     "apps.base.tasks.process_failed_to_invoke_celery_tasks": {"queue": "critical"},
     "apps.base.tasks.process_failed_to_invoke_celery_tasks_batch": {"queue": "critical"},
     "apps.email.tasks.notify_user_async": {"queue": "critical"},
+    "apps.google.tasks.sync_out_of_office_calendar_events_for_all_users": {"queue": "critical"},
+    "apps.google.tasks.sync_out_of_office_calendar_events_for_user": {"queue": "critical"},
     "apps.integrations.tasks.create_alert": {"queue": "critical"},
     "apps.integrations.tasks.create_alertmanager_alerts": {"queue": "critical"},
     "apps.integrations.tasks.start_notify_about_integration_ratelimit": {"queue": "critical"},
@@ -123,6 +128,7 @@ CELERY_TASK_ROUTES = {
     "apps.mobile_app.tasks.going_oncall_notification.conditionally_send_going_oncall_push_notifications_for_all_schedules": {
         "queue": "critical"
     },
+    "apps.mobile_app.fcm_relay.fcm_relay_async": {"queue": "critical"},
     "apps.schedules.tasks.drop_cached_ical.drop_cached_ical_for_custom_events_for_organization": {"queue": "critical"},
     "apps.schedules.tasks.drop_cached_ical.drop_cached_ical_task": {"queue": "critical"},
     # GRAFANA
@@ -176,9 +182,7 @@ CELERY_TASK_ROUTES = {
     "apps.telegram.tasks.send_log_and_actions_message": {"queue": "telegram"},
     "apps.telegram.tasks.on_alert_group_action_triggered_async": {"queue": "telegram"},
     # WEBHOOK
-    "apps.alerts.tasks.custom_button_result.custom_button_result": {"queue": "webhook"},
     "apps.alerts.tasks.custom_webhook_result.custom_webhook_result": {"queue": "webhook"},
-    "apps.mobile_app.fcm_relay.fcm_relay_async": {"queue": "webhook"},
     "apps.webhooks.tasks.trigger_webhook.execute_webhook": {"queue": "webhook"},
     "apps.webhooks.tasks.trigger_webhook.send_webhook_event": {"queue": "webhook"},
     "apps.webhooks.tasks.alert_group_status.alert_group_created": {"queue": "webhook"},
