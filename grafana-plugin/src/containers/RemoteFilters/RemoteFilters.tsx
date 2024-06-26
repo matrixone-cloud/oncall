@@ -32,7 +32,7 @@ import { PAGE } from 'utils/consts';
 import { convertTimerangeToFilterValue, getValueForDateRangeFilterType } from 'utils/datetime';
 import { allFieldsEmpty } from 'utils/utils';
 
-import { parseFilters } from './RemoteFilters.helpers';
+import { parseFilters,parseFiltersForAlertGroupPage } from './RemoteFilters.helpers';
 import { FilterOption } from './RemoteFilters.types';
 
 import styles from './RemoteFilters.module.css';
@@ -102,7 +102,7 @@ class _RemoteFilters extends Component<RemoteFiltersProps, RemoteFiltersState> {
     // set the current page from filters/query or default it to 1
     filtersStore.setCurrentTablePageNum(page, currentTablePageNum);
 
-    let { filters, values } = parseFilters({ ...query, ...filtersStore.globalValues }, filterOptions, query);
+    let { filters, values } = parseFiltersForAlertGroupPage({ ...query, ...filtersStore.globalValues }, filterOptions, query);
 
     if (allFieldsEmpty(values)) {
       ({ filters, values } = parseFilters(defaultFilters, filterOptions, query));

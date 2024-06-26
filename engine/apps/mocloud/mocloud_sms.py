@@ -15,10 +15,17 @@ logger = logging.getLogger(__name__)
 
 class MOCloudSMS:
     def __init__(self):
-        ALIBABA_CLOUD_ACCESS_KEY_ID = read_password_from_file(
-            os.environ['ACCESS_KEY_FILE'])
-        ALIBABA_CLOUD_ACCESS_KEY_SECRET = read_password_from_file(
-            os.environ['SECRET_KEY_FILE'])
+        if os.environ['ALIBABA_CLOUD_ACCESS_KEY_ID']!=None:
+            ALIBABA_CLOUD_ACCESS_KEY_ID=os.environ['ALIBABA_CLOUD_ACCESS_KEY_ID']
+        else:
+            ALIBABA_CLOUD_ACCESS_KEY_ID = read_password_from_file(
+                os.environ['ACCESS_KEY_FILE'])
+        if os.environ['ALIBABA_CLOUD_ACCESS_KEY_SECRET']!=None:
+            ALIBABA_CLOUD_ACCESS_KEY_SECRET=os.environ['ALIBABA_CLOUD_ACCESS_KEY_SECRET']
+        else:
+            ALIBABA_CLOUD_ACCESS_KEY_SECRET = read_password_from_file(
+                os.environ['SECRET_KEY_FILE'])
+
         self.sms_client = MOCloudSMS.create_client(
             ALIBABA_CLOUD_ACCESS_KEY_ID, ALIBABA_CLOUD_ACCESS_KEY_SECRET)
 
