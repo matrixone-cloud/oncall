@@ -1,0 +1,5 @@
+FROM busybox:1.36.1
+
+RUN mkdir -p /etc/grafana-plugin
+
+COPY ./src /etc/grafana-plugin/grafana-oncall-app
