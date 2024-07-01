@@ -1,5 +1,5 @@
 FROM grafana/grafana:10.1.4
 
-RUN mkdir -p /var/lib/grafana/moc-plugins
+RUN mkdir -p /etc/mocloud/grafana-plugins
 
-COPY ./grafana-plugin /var/lib/grafana/moc-plugins/moc-oncall-app
+COPY ./grafana-plugin /etc/mocloud/grafana-plugins/moc-oncall-app
