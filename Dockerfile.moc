@@ -4,11 +4,11 @@ WORKDIR /grafana-plugin
 
 COPY ./grafana-plugin /grafana-plugin
 
-RUN npm install
+RUN yarn install
 
 COPY . .
 
-RUN npm run build
+RUN yarn build
 
 FROM grafana/grafana:10.1.4
 
