@@ -1,5 +1,17 @@
+FROM node:18 AS builder
+
+WORKDIR /grafana-plugin
+
+COPY ./grafana-plugin /grafana-plugin
+
+RUN npm install
+
+COPY . .
+
+RUN npm run build
+
 FROM grafana/grafana:10.1.4
 
 WORKDIR /etc/mocloud/grafana-plugins
 
-COPY ./grafana-plugin /etc/mocloud/grafana-plugins/moc-oncall-app
+COPY --from=builder /grafana-plugin/dist /etc/mocloud/grafana-plugins/moc-oncall-app
