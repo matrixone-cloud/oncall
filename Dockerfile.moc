@@ -2,4 +2,4 @@ FROM grafana/grafana:10.1.4
 
 RUN mkdir -p /var/lib/moc/plugins
 
-COPY ./src /var/lib/moc/plugins/moc-oncall-app
+COPY ./grafana-plugin /var/lib/moc/plugins/moc-oncall-app
