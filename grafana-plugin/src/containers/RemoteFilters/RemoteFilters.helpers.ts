@@ -56,6 +56,7 @@ export function parseFiltersForAlertGroupPage(
     integration: data?.integration || [], 
     status: data?.status || [], 
     started_at: data.started_at , 
+    escalation_chain: data.escalation_chain , 
     // resolved_at: data.resolved_at , 
     // search: data.search, 
   };
