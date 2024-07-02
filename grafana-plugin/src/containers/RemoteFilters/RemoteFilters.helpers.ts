@@ -55,8 +55,10 @@ export function parseFiltersForAlertGroupPage(
   const dataWithPredefinedTeams = { 
     integration: data?.integration || [], 
     status: data?.status || [], 
-    started_at: data.started_at , 
-    escalation_chain: data.escalation_chain , 
+    started_at: 'now-7d_now'  , 
+    // escalation_chain: data.escalation_chain , 
+    // escalation_chain: data?.escalation_chain || [], 
+    // escalation_chain:  [], 
     // resolved_at: data.resolved_at , 
     // search: data.search, 
   };
@@ -85,6 +87,10 @@ export function parseFiltersForAlertGroupPage(
 
     if (filterOption.name==="integration"){
       filterOption.display_name="Env"
+    }
+
+    if (filterOption.name==="started_at"){
+      value = 'now-7d_now';
     }
 
     return {

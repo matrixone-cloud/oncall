@@ -327,10 +327,10 @@ class _IncidentsPage extends React.Component<IncidentsPageProps, IncidentsPageSt
           }}
           grafanaTeamStore={store.grafanaTeamStore}
           defaultFilters={{
-            team: [],
-            status: [IncidentStatus.Firing, IncidentStatus.Acknowledged],
-            mine: false,
-            started_at: 'now-30d_now',
+            integration:  [], 
+            status:  [], 
+            started_at: 'now-7d_now' , 
+            // search: "", 
           }}
         />
       </div>
