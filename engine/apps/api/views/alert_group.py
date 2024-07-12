@@ -69,6 +69,9 @@ class AlertGroupFilter(DateRangeFilterMixin, ModelFieldFilterMixin, filters.Filt
 
     is_root = filters.BooleanFilter(field_name="root_alert_group", lookup_expr="isnull")
     status = filters.MultipleChoiceFilter(choices=AlertGroup.STATUS_CHOICES, method="filter_status")
+    
+    deploy_env = filters.MultipleChoiceFilter(choices=AlertGroup.DEPLOY_ENV_CHOICES, method="filter_deploy_env")
+    
     started_at = filters.CharFilter(
         field_name="started_at",
         method=DateRangeFilterMixin.filter_date_range.__name__,
@@ -115,6 +118,34 @@ class AlertGroupFilter(DateRangeFilterMixin, ModelFieldFilterMixin, filters.Filt
     )
     with_resolution_note = filters.BooleanFilter(method="filter_with_resolution_note")
     mine = filters.BooleanFilter(method="filter_mine")
+
+    def filter_deploy_env(self, queryset, name, value):
+        if not value:
+            return queryset
+        try:
+            envs = list(str)
+        except ValueError:
+            raise BadRequest(detail="Invalid status value")
+
+        filters = {}
+        q_objects = Q()
+
+        if AlertGroup.DEV in envs:
+            env= envs[AlertGroup.DEV]
+            filters[env] = AlertGroup.get_deploy_env_filter(env)
+        if AlertGroup.QA in envs:
+            env= envs[AlertGroup.QA]
+            filters[env] = AlertGroup.get_deploy_env_filter(env)
+        if AlertGroup.PROD in envs:
+            env= envs[AlertGroup.PROD]
+            filters[env] = AlertGroup.get_deploy_env_filter(env)
+        
+        for item in filters:
+            q_objects |= filters[item]
+
+        queryset = queryset.filter(q_objects)
+
+        return queryset
 
     def filter_status(self, queryset, name, value):
         if not value:
@@ -321,9 +352,16 @@ class AlertGroupView(
                 labels__key_name=key,
                 labels__value_name=value,
             )
-
+        
+        envs = self.request.query_params.getlist("env", [])
+        env_q_objects = Q()
+        for env in envs:
+            env_q_objects |= AlertGroup.get_deploy_env_filter(env)
+        queryset=queryset.filter(env_q_objects)
+        
         queryset = queryset.only("id")
-
+        
+        print(queryset.query)
         return queryset
 
     def paginate_queryset(self, queryset):
@@ -739,6 +777,11 @@ class AlertGroupView(
         default_day_range = 30
 
         default_datetime_range = f"now-{default_day_range}d_now"
+        print(AlertGroup.DEPLOY_ENV_CHOICES)
+        envOption = []
+        for e in AlertGroup.DEPLOY_ENV_CHOICES:
+            envOption.append({"display_name": e, "value": e})
+
 
         filter_options = [
             {
@@ -787,6 +830,11 @@ class AlertGroupView(
                     {"display_name": "resolved", "value": AlertGroup.RESOLVED},
                     {"display_name": "silenced", "value": AlertGroup.SILENCED},
                 ],
+            },
+            {
+                "name": "env",
+                "type": "options",
+                "options": envOption,
             },
             {
                 "name": "started_at",

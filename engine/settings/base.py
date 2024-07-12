@@ -391,6 +391,10 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
         "": {
             "handlers": ["console"],
             "level": "INFO",
@@ -930,3 +934,6 @@ EXOTEL_SMS_DLT_ENTITY_ID = os.getenv("EXOTEL_SMS_DLT_ENTITY_ID", None)
 DETACHED_INTEGRATIONS_SERVER = getenv_boolean("DETACHED_INTEGRATIONS_SERVER", default=False)
 
 ACKNOWLEDGE_REMINDER_TASK_EXPIRY_DAYS = os.environ.get("ACKNOWLEDGE_REMINDER_TASK_EXPIRY_DAYS", default=14)
+
+moc_env_set = os.getenv('MOC_ENV_SET', 'DEV,QA,PROD')
+MOC_ENV_CHOICE = moc_env_set.split(',')

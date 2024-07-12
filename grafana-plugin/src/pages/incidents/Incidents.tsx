@@ -42,6 +42,7 @@ import { AlertGroupHelper } from 'models/alertgroup/alertgroup.helpers';
 import {
   AlertAction,
   IncidentStatus,
+  DeployEnv,
   AlertGroupColumn,
   AlertGroupColumnType,
 } from 'models/alertgroup/alertgroup.types';
@@ -327,9 +328,14 @@ class _IncidentsPage extends React.Component<IncidentsPageProps, IncidentsPageSt
           }}
           grafanaTeamStore={store.grafanaTeamStore}
           defaultFilters={{
-            integration:  [], 
-            status:  [], 
+            // integration:  [], 
+            team: [],
+            status:  [IncidentStatus.Firing, IncidentStatus.Acknowledged], 
             started_at: 'now-7d_now' , 
+            env: ["PROD"],
+            // status: [IncidentStatus.Firing, IncidentStatus.Acknowledged],
+            // mine: false,
+            // started_at: 'now-30d_now',
             // search: "", 
           }}
         />

@@ -215,6 +215,9 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
 
     # exists for status filter in API
     STATUS_CHOICES = ((NEW, "New"), (ACKNOWLEDGED, "Acknowledged"), (RESOLVED, "Resolved"), (SILENCED, "Silenced"))
+    
+    DEPLOY_ENV_CHOICES: list[str]
+    DEPLOY_ENV_CHOICES = settings.MOC_ENV_CHOICE
 
     GroupData = namedtuple(
         "GroupData", ["is_resolve_signal", "group_distinction", "web_title_cache", "is_acknowledge_signal"]
@@ -261,6 +264,10 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
     # For example different types of alerts from the same channel should go to different groups.
     # Distinction is what describes their difference.
     distinction = models.CharField(max_length=100, null=True, default=None, db_index=True)
+    
+    # for env filter
+    deploy_env = models.CharField(max_length=100, null=True, default=None, db_index=True)
+    
     web_title_cache = models.TextField(null=True, default=None)
 
     inside_organization_number = models.IntegerField(default=0)
@@ -417,6 +424,12 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
     is_open_for_grouping = models.BooleanField(default=None, null=True, blank=True)
 
     grafana_incident_id = models.CharField(max_length=100, null=True, default=None)
+    
+    @staticmethod
+    def get_deploy_env_filter(env: str):
+        return Q(deploy_env=models.Value(env))
+
+    
 
     @staticmethod
     def get_silenced_state_filter():
