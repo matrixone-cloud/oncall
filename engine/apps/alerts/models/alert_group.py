@@ -107,17 +107,20 @@ class AlertGroupQuerySet(models.QuerySet):
         inside_organization_number = AlertGroupCounter.objects.get_value(organization=organization) + 1
         return super().create(**kwargs, inside_organization_number=inside_organization_number)
 
-    def get_or_create_grouping(self, channel, channel_filter, group_data, received_at=None):
+    def get_or_create_grouping(self, deploy_env,alert_team,alert_severity,channel, channel_filter, group_data, received_at=None):
         """
         This method is similar to default Django QuerySet.get_or_create(), please see the original get_or_create method.
         The difference is that this method is trying to get an object using multiple queries with different filters.
         Also, "create" is invoked without transaction.atomic to reduce number of ConcurrentUpdateError's which can be
         raised in AlertGroupQuerySet.create() due to optimistic locking of AlertGroupCounter model.
-        """
+        """    
         search_params = {
             "channel": channel,
             "channel_filter": channel_filter,
             "distinction": group_data.group_distinction,
+            "deploy_env": deploy_env,
+            "alert_team": alert_team,
+            "alert_severity": alert_severity,
         }
 
         # Try to return the last open group

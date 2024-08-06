@@ -355,22 +355,25 @@ class AlertGroupView(
                 labels__value_name=value,
             )
         
-        q_objects = Q()
-        
+        # 这里单个筛选项应该是或关系，但是筛选条件之间要是与关系
+        env_q = Q()
         envs = self.request.query_params.getlist("env", [])
         for env in envs:
-            q_objects |= AlertGroup.get_deploy_env_filter(env)
-
+            env_q |= AlertGroup.get_deploy_env_filter(env)
+        queryset=queryset.filter(env_q)
+        
+        team_q = Q()
         alert_teams = self.request.query_params.getlist("moc_team", [])
         for t in alert_teams:
-            q_objects |= AlertGroup.get_alert_team_filter(t)
+            team_q |= AlertGroup.get_alert_team_filter(t)
+        queryset=queryset.filter(team_q)
         
+        severity_q = Q()
         alert_severity = self.request.query_params.getlist("severity", [])
         for s in alert_severity:
-            q_objects |= AlertGroup.get_alert_severity_filter(s)           
+            severity_q |= AlertGroup.get_alert_severity_filter(s)           
+        queryset=queryset.filter(severity_q)
         
-        queryset=queryset.filter(q_objects)
-        print(q_objects)
         queryset = queryset.only("id")
         
         print(queryset.query)

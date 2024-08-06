@@ -935,9 +935,11 @@ DETACHED_INTEGRATIONS_SERVER = getenv_boolean("DETACHED_INTEGRATIONS_SERVER", de
 
 ACKNOWLEDGE_REMINDER_TASK_EXPIRY_DAYS = os.environ.get("ACKNOWLEDGE_REMINDER_TASK_EXPIRY_DAYS", default=14)
 
-# moc_envs = os.getenv('MOC_ENV_SET', 'DEV,QA,PROD')
-# MOC_ENV_CHOICE = moc_envs.split(',')
 
-MOC_ENV_CHOICE = ["DEV","QA","PROD"]
+# mocloud
+MOC_ALERT_LABEL_KEY_ALERT_TEAM = "alertTeam"
+MOC_ALERT_LABEL_KEY_SEVERITY = "severity"
+MOC_ALERT_LABEL_KEY_DEPLOY_ENV = "deploy_env"
+MOC_ENV_CHOICE = ["DEV","QA","PROD","OTHER"]
 MOC_ALERT_SEVERITY= ["critical","warning","info","other"]
 MOC_ALERT_TEAM= ["Cloud Team","Orch Team","Other"]
