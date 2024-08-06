@@ -52,6 +52,7 @@ def get_alert_label(parsed_labels: AlertLabels):
     alert_team= "Other"
     alert_severity="other"
     
+    print(parsed_labels)
     
     for key,val in parsed_labels.items():
         if key==settings.MOC_ALERT_LABEL_KEY_ALERT_TEAM:
