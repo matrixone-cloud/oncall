@@ -70,8 +70,10 @@ class AlertGroupFilter(DateRangeFilterMixin, ModelFieldFilterMixin, filters.Filt
     is_root = filters.BooleanFilter(field_name="root_alert_group", lookup_expr="isnull")
     status = filters.MultipleChoiceFilter(choices=AlertGroup.STATUS_CHOICES, method="filter_status")
     
-    deploy_env = filters.MultipleChoiceFilter(choices=AlertGroup.DEPLOY_ENV_CHOICES, method="filter_deploy_env")
-    
+    deploy_env = filters.MultipleChoiceFilter(choices=AlertGroup.DEPLOY_ENV_CHOICES,method=ModelFieldFilterMixin.filter_model_field.__name__,)
+    alert_team = filters.MultipleChoiceFilter(choices=AlertGroup.ALERT_TEAM_CHOICES,method=ModelFieldFilterMixin.filter_model_field.__name__,)
+    alert_severity = filters.MultipleChoiceFilter(choices=AlertGroup.ALERT_SEVERITY_CHOICES,method=ModelFieldFilterMixin.filter_model_field.__name__,)
+
     started_at = filters.CharFilter(
         field_name="started_at",
         method=DateRangeFilterMixin.filter_date_range.__name__,
@@ -353,12 +355,22 @@ class AlertGroupView(
                 labels__value_name=value,
             )
         
-        envs = self.request.query_params.getlist("env", [])
-        env_q_objects = Q()
-        for env in envs:
-            env_q_objects |= AlertGroup.get_deploy_env_filter(env)
-        queryset=queryset.filter(env_q_objects)
+        q_objects = Q()
         
+        envs = self.request.query_params.getlist("env", [])
+        for env in envs:
+            q_objects |= AlertGroup.get_deploy_env_filter(env)
+
+        alert_teams = self.request.query_params.getlist("moc_team", [])
+        for t in alert_teams:
+            q_objects |= AlertGroup.get_alert_team_filter(t)
+        
+        alert_severity = self.request.query_params.getlist("severity", [])
+        for s in alert_severity:
+            q_objects |= AlertGroup.get_alert_severity_filter(s)           
+        
+        queryset=queryset.filter(q_objects)
+        print(q_objects)
         queryset = queryset.only("id")
         
         print(queryset.query)
@@ -777,11 +789,21 @@ class AlertGroupView(
         default_day_range = 30
 
         default_datetime_range = f"now-{default_day_range}d_now"
+        
         print(AlertGroup.DEPLOY_ENV_CHOICES)
         envOption = []
         for e in AlertGroup.DEPLOY_ENV_CHOICES:
             envOption.append({"display_name": e, "value": e})
 
+        print(AlertGroup.ALERT_TEAM_CHOICES)
+        mocTeamOption = []
+        for e in AlertGroup.ALERT_TEAM_CHOICES:
+            mocTeamOption.append({"display_name": e, "value": e})
+
+        print(AlertGroup.ALERT_SEVERITY_CHOICES)
+        mocSeverityOption = []
+        for e in AlertGroup.ALERT_SEVERITY_CHOICES:
+            mocSeverityOption.append({"display_name": e, "value": e})            
 
         filter_options = [
             {
@@ -835,6 +857,16 @@ class AlertGroupView(
                 "name": "env",
                 "type": "options",
                 "options": envOption,
+            },
+            {
+                "name": "moc_team",
+                "type": "options",
+                "options" : mocTeamOption,
+            },
+            {
+                "name": "severity",
+                "type": "options",
+                "options": mocSeverityOption,
             },
             {
                 "name": "started_at",

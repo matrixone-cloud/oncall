@@ -218,6 +218,13 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
     
     DEPLOY_ENV_CHOICES: list[str]
     DEPLOY_ENV_CHOICES = settings.MOC_ENV_CHOICE
+    
+    ALERT_TEAM_CHOICES: list[str]
+    ALERT_TEAM_CHOICES = settings.MOC_ALERT_TEAM
+    
+    ALERT_SEVERITY_CHOICES: list[str]
+    ALERT_SEVERITY_CHOICES = settings.MOC_ALERT_SEVERITY
+    
 
     GroupData = namedtuple(
         "GroupData", ["is_resolve_signal", "group_distinction", "web_title_cache", "is_acknowledge_signal"]
@@ -267,6 +274,8 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
     
     # for env filter
     deploy_env = models.CharField(max_length=100, null=True, default=None, db_index=True)
+    alert_team = models.CharField(max_length=100, null=True, default=None, db_index=True)
+    alert_severity = models.CharField(max_length=100, null=True, default=None, db_index=True)
     
     web_title_cache = models.TextField(null=True, default=None)
 
@@ -428,6 +437,14 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
     @staticmethod
     def get_deploy_env_filter(env: str):
         return Q(deploy_env=models.Value(env))
+
+    @staticmethod
+    def get_alert_team_filter(team: str):
+        return Q(alert_team=models.Value(team))
+    
+    @staticmethod
+    def get_alert_severity_filter(severity: str):
+        return Q(alert_severity=models.Value(severity))
 
     
 

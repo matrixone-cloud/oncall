@@ -329,7 +329,9 @@ class _IncidentsPage extends React.Component<IncidentsPageProps, IncidentsPageSt
           grafanaTeamStore={store.grafanaTeamStore}
           defaultFilters={{
             // integration:  [], 
-            team: [],
+            // team: [],
+            moc_team: [],
+            severity: ["critical"],
             status:  [IncidentStatus.Firing, IncidentStatus.Acknowledged], 
             started_at: 'now-7d_now' , 
             env: ["PROD"],
