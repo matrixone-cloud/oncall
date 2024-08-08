@@ -376,7 +376,7 @@ class AlertGroupView(
         
         queryset = queryset.only("id")
         
-        print(queryset.query)
+        print("alert query: ",queryset.query)
         return queryset
 
     def paginate_queryset(self, queryset):
@@ -793,17 +793,14 @@ class AlertGroupView(
 
         default_datetime_range = f"now-{default_day_range}d_now"
         
-        print(AlertGroup.DEPLOY_ENV_CHOICES)
         envOption = []
         for e in AlertGroup.DEPLOY_ENV_CHOICES:
             envOption.append({"display_name": e, "value": e})
 
-        print(AlertGroup.ALERT_TEAM_CHOICES)
         mocTeamOption = []
         for e in AlertGroup.ALERT_TEAM_CHOICES:
             mocTeamOption.append({"display_name": e, "value": e})
 
-        print(AlertGroup.ALERT_SEVERITY_CHOICES)
         mocSeverityOption = []
         for e in AlertGroup.ALERT_SEVERITY_CHOICES:
             mocSeverityOption.append({"display_name": e, "value": e})            
