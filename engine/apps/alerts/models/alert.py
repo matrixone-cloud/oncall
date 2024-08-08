@@ -47,12 +47,10 @@ def generate_public_primary_key_for_alert():
     return new_public_primary_key
 
 
-def get_alert_label(parsed_labels: AlertLabels):
-    deploy_env = "OTHER"
-    alert_team= "Other"
-    alert_severity="other"
-    
-    print(parsed_labels)
+def get_alert_label(parsed_labels: typing.Dict):
+    deploy_env = "other"
+    alert_team= "other"
+    alert_severity= "other"
     
     for key,val in parsed_labels.items():
         if key==settings.MOC_ALERT_LABEL_KEY_ALERT_TEAM:
@@ -122,7 +120,6 @@ class Alert(models.Model):
         """
         # This import is here to avoid circular imports
         from apps.alerts.models import AlertGroup, AlertGroupLogRecord, AlertReceiveChannel, ChannelFilter
-
         parsed_labels = gather_labels_from_alert_receive_channel_and_raw_request_data(
             alert_receive_channel, raw_request_data
         )
@@ -133,8 +130,8 @@ class Alert(models.Model):
 
         # Get or create group
         
-        env,team,severity=get_alert_label(parsed_labels)
-    
+        env,team,severity=get_alert_label(raw_request_data['commonLabels'])
+
         group, group_created = AlertGroup.objects.get_or_create_grouping(
             deploy_env=env,
             alert_team=team,

@@ -95,7 +95,7 @@ export function parseFiltersForAlertGroupPage(
     }
 
     if (filterOption.name==="integration"){
-      filterOption.display_name="Env"
+      filterOption.display_name="Env (integration)"
     }
 
     if (filterOption.name==="started_at"){
