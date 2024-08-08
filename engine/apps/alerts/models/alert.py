@@ -49,7 +49,7 @@ def generate_public_primary_key_for_alert():
 
 def get_alert_label(parsed_labels: typing.Dict):
     deploy_env = "other"
-    alert_team= "other"
+    alert_team= settings.MOC_DEFAULT_ALERT_TEAM
     alert_severity= "other"
     
     for key,val in parsed_labels.items():

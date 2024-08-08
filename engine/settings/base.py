@@ -937,9 +937,11 @@ ACKNOWLEDGE_REMINDER_TASK_EXPIRY_DAYS = os.environ.get("ACKNOWLEDGE_REMINDER_TAS
 
 
 # mocloud
-MOC_ALERT_LABEL_KEY_ALERT_TEAM = "alertTeam"
-MOC_ALERT_LABEL_KEY_SEVERITY = "severity"
-MOC_ALERT_LABEL_KEY_DEPLOY_ENV = "deployEnv"
+MOC_ALERT_LABEL_KEY_ALERT_TEAM  = os.getenv("MOC_ALERT_LABEL_KEY_ALERT_TEAM", "alertTeam")
+MOC_ALERT_LABEL_KEY_DEPLOY_ENV = os.getenv("MOC_ALERT_LABEL_KEY_DEPLOY_ENV", "deployEnv") 
+MOC_ALERT_LABEL_KEY_SEVERITY = os.getenv("MOC_ALERT_LABEL_KEY_SEVERITY", "severity") 
 MOC_ENV_CHOICE = ["dev","qa","prod","other"]
 MOC_ALERT_SEVERITY= ["critical","warning","info","other"]
 MOC_ALERT_TEAM= ["Cloud Team","Orch Team","other"]
+
+MOC_DEFAULT_ALERT_TEAM = os.getenv("MOC_DEFAULT_ALERT_TEAM", "Orch Team")
