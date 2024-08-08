@@ -940,8 +940,15 @@ ACKNOWLEDGE_REMINDER_TASK_EXPIRY_DAYS = os.environ.get("ACKNOWLEDGE_REMINDER_TAS
 MOC_ALERT_LABEL_KEY_ALERT_TEAM  = os.getenv("MOC_ALERT_LABEL_KEY_ALERT_TEAM", "alertTeam")
 MOC_ALERT_LABEL_KEY_DEPLOY_ENV = os.getenv("MOC_ALERT_LABEL_KEY_DEPLOY_ENV", "deployEnv") 
 MOC_ALERT_LABEL_KEY_SEVERITY = os.getenv("MOC_ALERT_LABEL_KEY_SEVERITY", "severity") 
-MOC_ENV_CHOICE = ["dev","qa","prod","other"]
-MOC_ALERT_SEVERITY= ["critical","warning","info","other"]
-MOC_ALERT_TEAM= ["Cloud Team","Orch Team","other"]
+
+MOC_ENV_SETS=os.getenv("MOC_ENV_SETS", "dev,qa,prod,other")
+MOC_ENV_CHOICE = MOC_ENV_SETS.split(',')
+
+MOC_SEVERITY_SETS=os.getenv("MOC_SEVERITY_SETS", "critical,warning,info,other")
+MOC_ALERT_SEVERITY = MOC_SEVERITY_SETS.split(',')
+
+MOC_ALERT_TEAM_CHOICES=os.getenv("MOC_ALERT_TEAM_CHOICES", "Cloud Team,Orch Team,other,CN1 Team,CN2 Team,DN Team,SRE Team,Test Team")
+MOC_ALERT_TEAM = MOC_ALERT_TEAM_CHOICES.split(',')
+
 
 MOC_DEFAULT_ALERT_TEAM = os.getenv("MOC_DEFAULT_ALERT_TEAM", "Orch Team")
