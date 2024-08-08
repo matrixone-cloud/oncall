@@ -55,21 +55,19 @@ export function parseFiltersForAlertGroupPage(
   const dataWithPredefinedTeams = { 
     integration: data?.integration || [], 
     status: data?.status || [], 
-    started_at: 'now-7d_now'  , 
+    started_at: data?.started_at || 'now-7d_now'  , 
     // escalation_chain: data.escalation_chain , 
-    // escalation_chain: data?.escalation_chain || [], 
-    // escalation_chain:  [], 
+    escalation_chain: data?.escalation_chain || [], 
     // resolved_at: data.resolved_at , 
     search: data.search, 
     // env: ["PROD"],
-    moc_team: [],
-    severity: [], 
+    moc_team: data?.moc_team || [],
+    severity: data?.severity || [], 
     // status: [IncidentStatus.Firing, IncidentStatus.Acknowledged],
     // mine: false,
     // started_at: 'now-30d_now',
 
-
-
+    ...data
   };
   const filters = filterOptions.filter((filterOption: FilterOption) => filterOption.name in dataWithPredefinedTeams);
 
@@ -98,9 +96,6 @@ export function parseFiltersForAlertGroupPage(
       filterOption.display_name="Env (integration)"
     }
 
-    if (filterOption.name==="started_at"){
-      value = 'now-7d_now';
-    }
 
     return {
       ...memo,

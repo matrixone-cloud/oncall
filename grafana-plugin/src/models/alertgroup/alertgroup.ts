@@ -59,6 +59,8 @@ export class AlertGroupStore {
       this.rootStore.filtersStore.options[PAGE.Incidents]
     );
 
+    console.log("get alerts with filter",this.incidentFilters)
+
     const {
       data: { results, next: nextRaw, previous: previousRaw, page_size },
     } = await onCallApi().GET('/alertgroups/', {
