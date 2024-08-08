@@ -107,17 +107,20 @@ class AlertGroupQuerySet(models.QuerySet):
         inside_organization_number = AlertGroupCounter.objects.get_value(organization=organization) + 1
         return super().create(**kwargs, inside_organization_number=inside_organization_number)
 
-    def get_or_create_grouping(self, channel, channel_filter, group_data, received_at=None):
+    def get_or_create_grouping(self, deploy_env,alert_team,alert_severity,channel, channel_filter, group_data, received_at=None):
         """
         This method is similar to default Django QuerySet.get_or_create(), please see the original get_or_create method.
         The difference is that this method is trying to get an object using multiple queries with different filters.
         Also, "create" is invoked without transaction.atomic to reduce number of ConcurrentUpdateError's which can be
         raised in AlertGroupQuerySet.create() due to optimistic locking of AlertGroupCounter model.
-        """
+        """    
         search_params = {
             "channel": channel,
             "channel_filter": channel_filter,
             "distinction": group_data.group_distinction,
+            "deploy_env": deploy_env,
+            "alert_team": alert_team,
+            "alert_severity": alert_severity,
         }
 
         # Try to return the last open group
@@ -215,6 +218,16 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
 
     # exists for status filter in API
     STATUS_CHOICES = ((NEW, "New"), (ACKNOWLEDGED, "Acknowledged"), (RESOLVED, "Resolved"), (SILENCED, "Silenced"))
+    
+    DEPLOY_ENV_CHOICES: list[str]
+    DEPLOY_ENV_CHOICES = settings.MOC_ENV_CHOICE
+    
+    ALERT_TEAM_CHOICES: list[str]
+    ALERT_TEAM_CHOICES = settings.MOC_ALERT_TEAM
+    
+    ALERT_SEVERITY_CHOICES: list[str]
+    ALERT_SEVERITY_CHOICES = settings.MOC_ALERT_SEVERITY
+    
 
     GroupData = namedtuple(
         "GroupData", ["is_resolve_signal", "group_distinction", "web_title_cache", "is_acknowledge_signal"]
@@ -261,6 +274,12 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
     # For example different types of alerts from the same channel should go to different groups.
     # Distinction is what describes their difference.
     distinction = models.CharField(max_length=100, null=True, default=None, db_index=True)
+    
+    # for env filter
+    deploy_env = models.CharField(max_length=100, null=True, default=None, db_index=True)
+    alert_team = models.CharField(max_length=100, null=True, default=None, db_index=True)
+    alert_severity = models.CharField(max_length=100, null=True, default=None, db_index=True)
+    
     web_title_cache = models.TextField(null=True, default=None)
 
     inside_organization_number = models.IntegerField(default=0)
@@ -417,6 +436,20 @@ class AlertGroup(AlertGroupSlackRenderingMixin, EscalationSnapshotMixin, models.
     is_open_for_grouping = models.BooleanField(default=None, null=True, blank=True)
 
     grafana_incident_id = models.CharField(max_length=100, null=True, default=None)
+    
+    @staticmethod
+    def get_deploy_env_filter(env: str):
+        return Q(deploy_env=models.Value(env))
+
+    @staticmethod
+    def get_alert_team_filter(team: str):
+        return Q(alert_team=models.Value(team))
+    
+    @staticmethod
+    def get_alert_severity_filter(severity: str):
+        return Q(alert_severity=models.Value(severity))
+
+    
 
     @staticmethod
     def get_silenced_state_filter():

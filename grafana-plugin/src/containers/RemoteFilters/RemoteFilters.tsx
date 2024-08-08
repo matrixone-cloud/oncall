@@ -102,6 +102,7 @@ class _RemoteFilters extends Component<RemoteFiltersProps, RemoteFiltersState> {
     // set the current page from filters/query or default it to 1
     filtersStore.setCurrentTablePageNum(page, currentTablePageNum);
 
+    // let { filters, values } = parseFilters({ ...query, ...filtersStore.globalValues }, filterOptions, query);
     let { filters, values } = parseFiltersForAlertGroupPage({ ...query, ...filtersStore.globalValues }, filterOptions, query);
 
     if (allFieldsEmpty(values)) {

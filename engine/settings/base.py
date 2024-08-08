@@ -391,6 +391,10 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
         "": {
             "handlers": ["console"],
             "level": "INFO",
@@ -930,3 +934,12 @@ EXOTEL_SMS_DLT_ENTITY_ID = os.getenv("EXOTEL_SMS_DLT_ENTITY_ID", None)
 DETACHED_INTEGRATIONS_SERVER = getenv_boolean("DETACHED_INTEGRATIONS_SERVER", default=False)
 
 ACKNOWLEDGE_REMINDER_TASK_EXPIRY_DAYS = os.environ.get("ACKNOWLEDGE_REMINDER_TASK_EXPIRY_DAYS", default=14)
+
+
+# mocloud
+MOC_ALERT_LABEL_KEY_ALERT_TEAM = "alert_team"
+MOC_ALERT_LABEL_KEY_SEVERITY = "severity"
+MOC_ALERT_LABEL_KEY_DEPLOY_ENV = "deploy_env"
+MOC_ENV_CHOICE = ["dev","qa","prod","other"]
+MOC_ALERT_SEVERITY= ["critical","warning","info","other"]
+MOC_ALERT_TEAM= ["Cloud Team","Orch Team","other"]

@@ -24,6 +24,7 @@ MAX_LABELS_PER_ALERT_GROUP = 15
 def gather_labels_from_alert_receive_channel_and_raw_request_data(
     alert_receive_channel: "AlertReceiveChannel", raw_request_data: "Alert.RawRequestData"
 ) -> typing.Optional[types.AlertLabels]:
+    
     if not is_labels_feature_enabled(alert_receive_channel.organization):
         return None
 

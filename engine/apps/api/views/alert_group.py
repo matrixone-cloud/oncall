@@ -69,6 +69,11 @@ class AlertGroupFilter(DateRangeFilterMixin, ModelFieldFilterMixin, filters.Filt
 
     is_root = filters.BooleanFilter(field_name="root_alert_group", lookup_expr="isnull")
     status = filters.MultipleChoiceFilter(choices=AlertGroup.STATUS_CHOICES, method="filter_status")
+    
+    deploy_env = filters.MultipleChoiceFilter(choices=AlertGroup.DEPLOY_ENV_CHOICES,method=ModelFieldFilterMixin.filter_model_field.__name__,)
+    alert_team = filters.MultipleChoiceFilter(choices=AlertGroup.ALERT_TEAM_CHOICES,method=ModelFieldFilterMixin.filter_model_field.__name__,)
+    alert_severity = filters.MultipleChoiceFilter(choices=AlertGroup.ALERT_SEVERITY_CHOICES,method=ModelFieldFilterMixin.filter_model_field.__name__,)
+
     started_at = filters.CharFilter(
         field_name="started_at",
         method=DateRangeFilterMixin.filter_date_range.__name__,
@@ -115,6 +120,34 @@ class AlertGroupFilter(DateRangeFilterMixin, ModelFieldFilterMixin, filters.Filt
     )
     with_resolution_note = filters.BooleanFilter(method="filter_with_resolution_note")
     mine = filters.BooleanFilter(method="filter_mine")
+
+    def filter_deploy_env(self, queryset, name, value):
+        if not value:
+            return queryset
+        try:
+            envs = list(str)
+        except ValueError:
+            raise BadRequest(detail="Invalid status value")
+
+        filters = {}
+        q_objects = Q()
+
+        if AlertGroup.DEV in envs:
+            env= envs[AlertGroup.DEV]
+            filters[env] = AlertGroup.get_deploy_env_filter(env)
+        if AlertGroup.QA in envs:
+            env= envs[AlertGroup.QA]
+            filters[env] = AlertGroup.get_deploy_env_filter(env)
+        if AlertGroup.PROD in envs:
+            env= envs[AlertGroup.PROD]
+            filters[env] = AlertGroup.get_deploy_env_filter(env)
+        
+        for item in filters:
+            q_objects |= filters[item]
+
+        queryset = queryset.filter(q_objects)
+
+        return queryset
 
     def filter_status(self, queryset, name, value):
         if not value:
@@ -321,9 +354,29 @@ class AlertGroupView(
                 labels__key_name=key,
                 labels__value_name=value,
             )
-
+        
+        # 这里单个筛选项应该是或关系，但是筛选条件之间要是与关系
+        env_q = Q()
+        envs = self.request.query_params.getlist("env", [])
+        for env in envs:
+            env_q |= AlertGroup.get_deploy_env_filter(env)
+        queryset=queryset.filter(env_q)
+        
+        team_q = Q()
+        alert_teams = self.request.query_params.getlist("moc_team", [])
+        for t in alert_teams:
+            team_q |= AlertGroup.get_alert_team_filter(t)
+        queryset=queryset.filter(team_q)
+        
+        severity_q = Q()
+        alert_severity = self.request.query_params.getlist("severity", [])
+        for s in alert_severity:
+            severity_q |= AlertGroup.get_alert_severity_filter(s)           
+        queryset=queryset.filter(severity_q)
+        
         queryset = queryset.only("id")
-
+        
+        print("alert query: ",queryset.query)
         return queryset
 
     def paginate_queryset(self, queryset):
@@ -739,6 +792,18 @@ class AlertGroupView(
         default_day_range = 30
 
         default_datetime_range = f"now-{default_day_range}d_now"
+        
+        envOption = []
+        for e in AlertGroup.DEPLOY_ENV_CHOICES:
+            envOption.append({"display_name": e, "value": e})
+
+        mocTeamOption = []
+        for e in AlertGroup.ALERT_TEAM_CHOICES:
+            mocTeamOption.append({"display_name": e, "value": e})
+
+        mocSeverityOption = []
+        for e in AlertGroup.ALERT_SEVERITY_CHOICES:
+            mocSeverityOption.append({"display_name": e, "value": e})            
 
         filter_options = [
             {
@@ -787,6 +852,21 @@ class AlertGroupView(
                     {"display_name": "resolved", "value": AlertGroup.RESOLVED},
                     {"display_name": "silenced", "value": AlertGroup.SILENCED},
                 ],
+            },
+            {
+                "name": "env",
+                "type": "options",
+                "options": envOption,
+            },
+            {
+                "name": "moc_team",
+                "type": "options",
+                "options" : mocTeamOption,
+            },
+            {
+                "name": "severity",
+                "type": "options",
+                "options": mocSeverityOption,
             },
             {
                 "name": "started_at",

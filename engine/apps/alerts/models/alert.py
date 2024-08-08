@@ -47,6 +47,21 @@ def generate_public_primary_key_for_alert():
     return new_public_primary_key
 
 
+def get_alert_label(parsed_labels: typing.Dict):
+    deploy_env = "other"
+    alert_team= "other"
+    alert_severity= "other"
+    
+    for key,val in parsed_labels.items():
+        if key==settings.MOC_ALERT_LABEL_KEY_ALERT_TEAM:
+            alert_team=val
+        elif key==settings.MOC_ALERT_LABEL_KEY_DEPLOY_ENV:
+            deploy_env=val
+        elif key== settings.MOC_ALERT_LABEL_KEY_SEVERITY:
+            alert_severity=val
+    return deploy_env,alert_team,alert_severity
+
+
 class Alert(models.Model):
     group: typing.Optional["AlertGroup"]
     resolved_alert_groups: "RelatedManager['AlertGroup']"
@@ -105,7 +120,6 @@ class Alert(models.Model):
         """
         # This import is here to avoid circular imports
         from apps.alerts.models import AlertGroup, AlertGroupLogRecord, AlertReceiveChannel, ChannelFilter
-
         parsed_labels = gather_labels_from_alert_receive_channel_and_raw_request_data(
             alert_receive_channel, raw_request_data
         )
@@ -115,7 +129,13 @@ class Alert(models.Model):
             channel_filter = ChannelFilter.select_filter(alert_receive_channel, raw_request_data, parsed_labels)
 
         # Get or create group
+        
+        env,team,severity=get_alert_label(raw_request_data['commonLabels'])
+
         group, group_created = AlertGroup.objects.get_or_create_grouping(
+            deploy_env=env,
+            alert_team=team,
+            alert_severity=severity,
             channel=alert_receive_channel,
             channel_filter=channel_filter,
             group_data=group_data,

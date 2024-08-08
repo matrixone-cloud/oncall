@@ -60,7 +60,16 @@ export function parseFiltersForAlertGroupPage(
     // escalation_chain: data?.escalation_chain || [], 
     // escalation_chain:  [], 
     // resolved_at: data.resolved_at , 
-    // search: data.search, 
+    search: data.search, 
+    // env: ["PROD"],
+    moc_team: [],
+    severity: [], 
+    // status: [IncidentStatus.Firing, IncidentStatus.Acknowledged],
+    // mine: false,
+    // started_at: 'now-30d_now',
+
+
+
   };
   const filters = filterOptions.filter((filterOption: FilterOption) => filterOption.name in dataWithPredefinedTeams);
 
@@ -86,7 +95,7 @@ export function parseFiltersForAlertGroupPage(
     }
 
     if (filterOption.name==="integration"){
-      filterOption.display_name="Env"
+      filterOption.display_name="Env (integration)"
     }
 
     if (filterOption.name==="started_at"){

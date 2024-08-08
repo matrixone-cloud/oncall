@@ -7,6 +7,12 @@ export enum IncidentStatus {
   'Silenced',
 }
 
+export enum DeployEnv {
+  'DEV',
+  'QA',
+  'PROD',
+}
+
 export enum AlertAction {
   Acknowledge = 'acknowledge',
   unAcknowledge = 'unacknowledge',
