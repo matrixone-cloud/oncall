@@ -59,6 +59,7 @@ class ChannelFilter(OrderedModel):
         "alerts.AlertReceiveChannel", on_delete=models.CASCADE, related_name="channel_filters"
     )
 
+    # eschain 过滤条件实现
     escalation_chain = models.ForeignKey(
         "alerts.EscalationChain", null=True, default=None, on_delete=models.SET_NULL, related_name="channel_filters"
     )

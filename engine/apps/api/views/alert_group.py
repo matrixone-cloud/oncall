@@ -376,7 +376,6 @@ class AlertGroupView(
         
         queryset = queryset.only("id")
         
-        print("alert query: ",queryset.query)
         return queryset
 
     def paginate_queryset(self, queryset):
@@ -386,6 +385,7 @@ class AlertGroupView(
         """
         alert_groups = super().paginate_queryset(queryset)
         alert_groups = self.enrich(alert_groups)
+        print("fetch alert gtoups: ",alert_groups)
         return alert_groups
 
     def get_object(self):
@@ -463,8 +463,11 @@ class AlertGroupView(
         # enrich alert groups with select_related and prefetch_related
         alert_group_pks = [alert_group.pk for alert_group in alert_groups]
         queryset = AlertGroup.objects.filter(pk__in=alert_group_pks).order_by("-started_at")
-
+        
+        print(queryset.query)
+        
         queryset = self.get_serializer_class().setup_eager_loading(queryset)
+        
         alert_groups = list(queryset)
 
         # get info on alerts count and last alert ID for every alert group
@@ -511,6 +514,7 @@ class AlertGroupView(
         """
         MAX_COUNT = 100001
         alert_groups = self.filter_queryset(self.get_queryset())[:MAX_COUNT]
+        print("/stats sql query: ",alert_groups.query)
         count = alert_groups.count()
         count = f"{MAX_COUNT-1}+" if count == MAX_COUNT else str(count)
         return Response({"count": count})
