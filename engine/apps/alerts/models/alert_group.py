@@ -118,9 +118,6 @@ class AlertGroupQuerySet(models.QuerySet):
             "channel": channel,
             "channel_filter": channel_filter,
             "distinction": group_data.group_distinction,
-            "deploy_env": deploy_env,
-            "alert_team": alert_team,
-            "alert_severity": alert_severity,
         }
 
         # Try to return the last open group
@@ -139,11 +136,18 @@ class AlertGroupQuerySet(models.QuerySet):
 
         # Create a new group if we couldn't group it to any existing ones
         try:
+
+        # dupkey
+        # 错误的原因是，新的告警有env那些的，而旧的没有，所有一直告警的东西会出错，因为他们的唯一索引不同
+        # 然后每次他search不到，但是想插进去也不行
             alert_group = self.create(
                 **search_params,
                 is_open_for_grouping=True,
                 web_title_cache=group_data.web_title_cache,
                 received_at=received_at,
+                deploy_env=deploy_env,
+                alert_team=alert_team,
+                alert_severity=alert_severity,
             )
             alert_group_created_signal.send(sender=self.__class__, alert_group=alert_group)
             return (alert_group, True)
