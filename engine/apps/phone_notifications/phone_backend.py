@@ -378,9 +378,11 @@ class PhoneBackend:
         if new_number:
             user.save_verified_phone_number(new_number)
             # TODO: move this to async task
-            if prev_number:
-                self._notify_disconnected_number(user, prev_number)
-            self._notify_connected_number(user)
+            # 解绑无需通知
+            # if prev_number:
+            #     self._notify_disconnected_number(user, prev_number)
+            # 绑定无需通知
+            # self._notify_connected_number(user)
             logger.info(
                 f"PhoneBackend.verify_phone_number: verified user_id={user.id}")
             return True
@@ -393,7 +395,8 @@ class PhoneBackend:
         prev_number = user.verified_phone_number
         user.clear_phone_numbers()
         if prev_number:
-            self._notify_disconnected_number(user, prev_number)
+            # forget 无需通知
+            # self._notify_disconnected_number(user, prev_number)
             return True
         return False
 
