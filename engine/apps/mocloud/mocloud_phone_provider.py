@@ -3,7 +3,7 @@ from random import randint
 
 from django.core.cache import cache
 
-from ..phone_notifications.exceptions import FailedToSendSMS, FailedToStartVerification
+from ..phone_notifications.exceptions import FailedToSendSMS, FailedToStartVerification,FailedToMakeCall
 from ..phone_notifications.phone_provider import PhoneProvider, ProviderFlags
 from apps.mocloud.mocloud_sms import MOCloudSMS
 from apps.mocloud.mocloud_vms import MOCloudVMS
@@ -34,7 +34,32 @@ class MOCloudPhoneProvider(PhoneProvider):
                 f"SimplePhoneProvider.send_notification_sms: failed {e}")
             raise FailedToSendSMS
         
+    def make_call(self, number: str, text: str):
+        """
+        should only use in send vms test
+        """
+        try:
+            self.vms_client.send_vms_test(number,"")
+        except Exception as e:
+            # Example of handling provider exceptions and converting them to exceptions from core OnCall code.
+            logger.error(
+                f"Test vms failed: MocloudPhoneProvider.send_vms_test: failed {e}")
+            raise FailedToMakeCall
+        pass
 
+    def send_sms(self, number: str, text: str):
+        """
+        should only use in send sms test
+        """
+        try:
+            self.sms_client.send_sms_test(number,"")
+        except Exception as e:
+            # Example of handling provider exceptions and converting them to exceptions from core OnCall code.
+            logger.error(
+                f"Test sms failed: MocloudPhoneProvider.send_sms_test: failed {e}")
+            raise FailedToSendSMS
+        pass
+    
     def send_verification_sms(self, number):
         code = str(randint(100000, 999999))
         cache.set(self._cache_key(number), code, timeout=10 * 60)
@@ -70,6 +95,6 @@ class MOCloudPhoneProvider(PhoneProvider):
         return ProviderFlags(
             configured=True,
             test_sms=True,
-            test_call=False,
+            test_call=True,
             verification_call=False,
             verification_sms=True,)

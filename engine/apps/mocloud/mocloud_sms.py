@@ -10,6 +10,7 @@ from apps.mocloud.mocloud_template import (
     DEFAULT_SMS_VERTIFICATOIN_TEMPLATE,
     DEFAULT_SMS_NOTIFICATION_TEMPLATE,
     DEFAULT_SIGN_NAME,
+    SMS_ALERT_TEST_TEMPLATE,
     read_password_from_file,
 )
 from ..phone_notifications.exceptions import FailedToSendSMS, FailedToStartVerification
@@ -47,6 +48,31 @@ class MOCloudSMS:
             endpoint=f"dysmsapi.aliyuncs.com",
         )
         return Dysmsapi20170525Client(config)
+
+
+    def send_sms_test(self, number, parmas):
+        send_sms_request = dysmsapi_20170525_models.SendSmsRequest(
+            phone_numbers=number,
+            sign_name=DEFAULT_SIGN_NAME,
+            template_code=SMS_ALERT_TEST_TEMPLATE,
+            template_param=parmas,
+        )
+        try:
+            # 复制代码运行请自行打印 API 的返回值
+            resp = self.sms_client.send_sms_with_options(send_sms_request, util_models.RuntimeOptions())
+            print(f"use tmpl:{send_sms_request.template_code} received code:{resp.body.code}, msg:{resp.body.message}")
+            logger.info(f"send sms test to [{number}] success")
+        except Exception as error:
+            logger.error(f"send sms test to [{number}] failed")
+            # 错误 message
+            print(error.message)
+            # 诊断地址
+            print(error.data.get("Recommend"))
+            # example of handling provider exceptions and converting them to exceptions from core OnCall code.
+            logger.error(f"SimplePhoneProvider.send_sms: failed {error}")
+            UtilClient.assert_as_string(error.message)
+            raise FailedToSendSMS
+
 
     def send_sms_notification(self, number, parmas):
         send_sms_request = dysmsapi_20170525_models.SendSmsRequest(
