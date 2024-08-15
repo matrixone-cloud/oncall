@@ -109,12 +109,21 @@ class PhoneBackend:
             message = self._add_call_limit_warning(calls_left, message)
 
         if PHONE_PROVIDER == "mocloud":
-            parmas = {"cluster_env": alert_group.channel.short_name,
+            env_name = f"{alert_group.channel.short_name}"
+            env=env_name.replace(" - Alertmanager", "")
+            if settings.MOC_VMS_ALERT_PHONE_OPS:
+                parmas = {"cluster_region_env": env,
+                      "alert_name": alert_group.web_title_cache, }
+                parmasStr = json.dumps(parmas)
+                return self.phone_provider.make_notification_call_ops(user.verified_phone_number,parmasStr,env,alert_group.public_primary_key,user.username)
+            else:
+                parmas = {"cluster_env": env,
                       "alert_count": alert_group.alerts.count(), }
-            parmasStr = json.dumps(parmas)
-            # in mocloud alert, message is actually template parmas (json)
-            # parmasStr = VMSTemplate.rander_params(alert_group)
-            return self.phone_provider.make_notification_call(user.verified_phone_number, parmasStr)
+                parmasStr = json.dumps(parmas)
+            
+                # in mocloud alert, message is actually template parmas (json)
+                # parmasStr = VMSTemplate.rander_params(alert_group)
+                return self.phone_provider.make_notification_call(user.verified_phone_number, parmasStr)
 
         return self.phone_provider.make_notification_call(user.verified_phone_number, message)
 
@@ -232,10 +241,11 @@ class PhoneBackend:
         if PHONE_PROVIDER == "mocloud":
             # in mocloud alert, message is actually template parmas (json)
             env_name = f"{alert_group.channel.short_name}"
+            env=env_name.replace(" - Alertmanager", "")
             alert_time = f"{alert_group.started_at.astimezone(pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')}"
             alert_name = f"{alert_group.web_title_cache}"
             parmasStr = '{"cluster_env": "%s","alert_time": "%s","alert_name": "%s"}' % (
-                env_name, alert_time, alert_name)
+                env, alert_time, alert_name)
             # parmasStr = VMSTemplate.rander_params(alert_group)
             return self.phone_provider.send_notification_sms(user.verified_phone_number, parmasStr)
 

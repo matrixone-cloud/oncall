@@ -163,6 +163,15 @@ class PhoneProvider(ABC):
         """
         raise ProviderNotSupports
 
+
+
+    def make_notification_call_ops(self, callee_number: str, parmas: str, env: str, incidentID: str, userID: str) -> typing.Optional[ProviderPhoneCall]:
+        """
+        mocloud phone ops
+        """
+        raise ProviderNotSupports
+
+
     @property
     @abstractmethod
     def flags(self) -> ProviderFlags:
