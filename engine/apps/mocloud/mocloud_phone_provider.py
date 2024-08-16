@@ -20,6 +20,10 @@ class MOCloudPhoneProvider(PhoneProvider):
         self.sms_client = MOCloudSMS()
         self.vms_client = MOCloudVMS()
 
+
+    def make_notification_call_ops(self, callee_number: str, parmas: str, env: str, incidentID: str, userID: str):
+        self.vms_client.send_vms_notification_ops(callee_number,parmas,env,incidentID,userID)
+    
     def make_notification_call(self, number, text):
         # 需要做内容截断，不能超过 1000 字
         # 不可发送 ip，确实要的话需要转成_
