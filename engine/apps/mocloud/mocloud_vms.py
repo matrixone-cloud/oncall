@@ -90,6 +90,7 @@ class MOCloudVMS:
 
     def send_vms_test(self, number, parmas):
         single_call_by_voice_request = dyvmsapi_20170525_models.SingleCallByTtsRequest(
+            called_show_number=settings.MOC_DEFAULT_ALERT_CALLER,
             tts_param=parmas,
             speed=5,
             play_times=3,
