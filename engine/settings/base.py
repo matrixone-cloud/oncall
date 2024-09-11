@@ -787,6 +787,10 @@ MOBILE_APP_GATEWAY_ENABLED = getenv_boolean("MOBILE_APP_GATEWAY_ENABLED", defaul
 GRAFANA_CLOUD_AUTH_API_URL = os.environ.get("GRAFANA_CLOUD_AUTH_API_URL", None)
 GRAFANA_CLOUD_AUTH_API_SYSTEM_TOKEN = os.environ.get("GRAFANA_CLOUD_AUTH_API_SYSTEM_TOKEN", None)
 
+final_api_url=os.environ.get("FINAL_API_URL", default=None),
+if final_api_url == None:
+    final_api_url=os.environ.get("GRAFANA_API_URL", default=None)
+
 SELF_HOSTED_SETTINGS = {
     "STACK_ID": getenv_integer("SELF_HOSTED_STACK_ID", 5),
     "STACK_SLUG": os.environ.get("SELF_HOSTED_STACK_SLUG", "self_hosted_stack"),
@@ -794,7 +798,7 @@ SELF_HOSTED_SETTINGS = {
     "ORG_SLUG": os.environ.get("SELF_HOSTED_ORG_SLUG", "self_hosted_org"),
     "ORG_TITLE": os.environ.get("SELF_HOSTED_ORG_TITLE", "Self-Hosted Organization"),
     "REGION_SLUG": os.environ.get("SELF_HOSTED_REGION_SLUG", "self_hosted_region"),
-    "GRAFANA_API_URL": os.environ.get("GRAFANA_API_URL", default=None),
+    "GRAFANA_API_URL": final_api_url,
     "CLUSTER_SLUG": os.environ.get("SELF_HOSTED_CLUSTER_SLUG", "self_hosted_cluster"),
 }
 
