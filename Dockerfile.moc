@@ -10,7 +10,7 @@ COPY . .
 
 RUN yarn build
 
-FROM grafana/grafana:10.1.4
+FROM grafana/grafana:11.2.0
 
 WORKDIR /etc/mocloud/grafana-plugins
 
