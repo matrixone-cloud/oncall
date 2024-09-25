@@ -1,14 +1,11 @@
 FROM node:18 AS builder
 
-
 RUN apt-get update && apt-get install -y wget && \
     wget https://go.dev/dl/go1.23.1.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.23.1.linux-amd64.tar.gz && \
     rm go1.23.1.linux-amd64.tar.gz
 
 ENV PATH="/usr/local/go/bin:${PATH}"
-
-RUN go install github.com/magefile/mage@latest
 
 WORKDIR /grafana-plugin
 
@@ -22,7 +19,11 @@ COPY . .
 
 RUN pnpm build
 
-RUN mage buildAll
+RUN wget https://github.com/magefile/mage/releases/download/v1.15.0/mage_1.15.0_Linux-64bit.tar.gz && \
+    tar -C /usr/local/bin -xzf mage_1.15.0_Linux-64bit.tar.gz && \
+    rm mage_1.15.0_Linux-64bit.tar.gz
+
+RUN /usr/local/bin/mage buildAll
 
 FROM grafana/grafana:11.2.0
 
