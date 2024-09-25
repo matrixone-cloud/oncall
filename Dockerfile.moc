@@ -4,13 +4,15 @@ WORKDIR /grafana-plugin
 
 COPY ./grafana-plugin /grafana-plugin
 
-RUN yarn install
+RUN npm install -g pnpm
+
+RUN pnpm install
 
 COPY . .
 
-RUN yarn build
+RUN pnpm build
 
-FROM grafana/grafana:10.2.5
+FROM grafana/grafana:11.2.0
 
 WORKDIR /etc/mocloud/grafana-plugins
 
