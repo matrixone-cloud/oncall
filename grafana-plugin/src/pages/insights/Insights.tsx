@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { css } from '@emotion/css';
 import {
   EmbeddedScene,
   SceneTimeRange,
@@ -14,17 +15,16 @@ import {
   SceneAppPage,
   useSceneApp,
 } from '@grafana/scenes';
-import { Alert, LoadingPlaceholder, VerticalGroup } from '@grafana/ui';
+import { Alert, LoadingPlaceholder, Stack, useStyles2 } from '@grafana/ui';
+import { DOCS_ROOT, StackSize, PLUGIN_ROOT, IS_CURRENT_ENV_OSS } from 'helpers/consts';
 import { observer } from 'mobx-react';
 
 import { Text } from 'components/Text/Text';
 import { Tutorial } from 'components/Tutorial/Tutorial';
 import { TutorialStep } from 'components/Tutorial/Tutorial.types';
 import { useStore } from 'state/useStore';
-import { DOCS_ROOT, PLUGIN_ROOT } from 'utils/consts';
 
 import { useAlertCreationChecker } from './Insights.hooks';
-import styles from './Insights.module.scss';
 import { InsightsConfig } from './Insights.types';
 import { getAlertGroupsByIntegrationScene } from './scenes/AlertGroupsByIntegration';
 import { getAlertGroupsByTeamScene } from './scenes/AlertGroupsByTeam';
@@ -40,7 +40,6 @@ import getVariables from './variables';
 
 export const Insights = observer(() => {
   const {
-    isOpenSource,
     insightsDatasource,
     organizationStore: { currentOrganization },
   } = useStore();
@@ -49,11 +48,11 @@ export const Insights = observer(() => {
 
   const config = useMemo(
     () => ({
-      isOpenSource,
-      datasource: { uid: isOpenSource ? '$datasource' : insightsDatasource },
+      isOpenSource: IS_CURRENT_ENV_OSS,
+      datasource: { uid: IS_CURRENT_ENV_OSS ? '$datasource' : insightsDatasource },
       stack: currentOrganization?.stack_slug,
     }),
-    [isOpenSource, currentOrganization?.stack_slug]
+    [currentOrganization?.stack_slug]
   );
 
   const variables = useMemo(() => getVariables(config), [config]);
@@ -62,12 +61,14 @@ export const Insights = observer(() => {
 
   const appScene = useSceneApp(getAppScene);
 
+  const styles = useStyles2(getStyles);
+
   useEffect(() => {
     if (!isAnyAlertCreatedMoreThan20SecsAgo) {
       return undefined;
     }
     const dataSourceListener =
-      isOpenSource &&
+      IS_CURRENT_ENV_OSS &&
       variables.datasource.subscribeToState(({ text }) => {
         setDatasource(`${text}`);
       });
@@ -84,7 +85,7 @@ export const Insights = observer(() => {
       <InsightsGeneralInfo />
       {isAnyAlertCreatedMoreThan20SecsAgo ? (
         <>
-          {isOpenSource && !datasource && <NoDatasourceWarning />}
+          {IS_CURRENT_ENV_OSS && !datasource && <NoDatasourceWarning />}
           <appScene.Component model={appScene} />
         </>
       ) : (
@@ -104,18 +105,20 @@ const InsightsGeneralInfo = () => {
 };
 
 const NoAlertCreatedTutorial = () => {
+  const styles = useStyles2(getStyles);
+
   return (
     <div className={styles.spaceTop}>
       <Tutorial
         step={TutorialStep.Integrations}
         title={
-          <VerticalGroup align="center" spacing="lg">
+          <Stack direction="column" alignItems="center" gap={StackSize.lg}>
             <Text type="secondary">
               Your OnCall stack doesn’t have any alerts to visualise insights.
               <br />
               Make sure that you setup OnCall configuration to start monitoring.
             </Text>
-          </VerticalGroup>
+          </Stack>
         }
       />
     </div>
@@ -123,6 +126,7 @@ const NoAlertCreatedTutorial = () => {
 };
 
 const NoDatasourceWarning = () => {
+  const styles = useStyles2(getStyles);
   const [alertVisible, setAlertVisible] = useState(true);
   const docsLink = (
     <a href={`${DOCS_ROOT}/insights-and-metrics`} target="_blank" rel="noreferrer">
@@ -224,3 +228,25 @@ const getRootScene = (config: InsightsConfig, variables: ReturnType<typeof getVa
       }),
     ],
   });
+
+const getStyles = () => {
+  return {
+    // Required to remove inner page padding since grafana-scenes doesn't support its style modification
+    insights: css`
+      div[class*='page-inner'] {
+        padding-left: 0;
+        padding-right: 0;
+        border: none;
+        margin: 0;
+      }
+    `,
+
+    spaceTop: css`
+      margin-top: 16px;
+    `,
+
+    alertBox: css`
+      margin-top: 32px;
+    `,
+  };
+};

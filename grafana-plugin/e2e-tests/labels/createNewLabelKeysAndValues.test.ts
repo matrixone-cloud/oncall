@@ -1,9 +1,16 @@
 import { test, expect } from '../fixtures';
+import { isGrafanaVersionGreaterThan } from '../utils/constants';
 import { clickButton, generateRandomValidLabel, openDropdown } from '../utils/forms';
 import { openCreateIntegrationModal } from '../utils/integrations';
 import { goToOnCallPage } from '../utils/navigation';
 
-test('New label keys and labels can be created @expensive', async ({ adminRolePage }) => {
+test.skip(
+  () => isGrafanaVersionGreaterThan('10.3.0'),
+  'Above 10.3 labels need enterprise version to validate permissions'
+);
+
+// TODO: This test is flaky on CI. Undo skipping once we can test labels locally
+test.skip('New label keys and labels can be created @expensive', async ({ adminRolePage }) => {
   const { page } = adminRolePage;
   await goToOnCallPage(page, 'integrations');
   await openCreateIntegrationModal(page);

@@ -3,8 +3,7 @@ import React from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import {
   Button,
-  HorizontalGroup,
-  VerticalGroup,
+  Stack,
   IconButton,
   ToolbarButton,
   Icon,
@@ -17,11 +16,15 @@ import {
   DatePicker,
 } from '@grafana/ui';
 import dayjs from 'dayjs';
+import { HTML_ID, scrollToElement } from 'helpers/DOM';
+import { isUserActionAllowed, UserActions } from 'helpers/authorization/authorization';
+import { PLUGIN_ROOT, StackSize } from 'helpers/consts';
+import { PropsWithRouter, withRouter } from 'helpers/hoc';
 import { observer } from 'mobx-react';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
 
 import { PageErrorHandlingWrapper } from 'components/PageErrorHandlingWrapper/PageErrorHandlingWrapper';
 import { PluginLink } from 'components/PluginLink/PluginLink';
+import { RenderConditionally } from 'components/RenderConditionally/RenderConditionally';
 import { ScheduleFilters } from 'components/ScheduleFilters/ScheduleFilters';
 import { ScheduleFiltersType } from 'components/ScheduleFilters/ScheduleFilters.types';
 import { ScheduleQuality } from 'components/ScheduleQuality/ScheduleQuality';
@@ -42,14 +45,20 @@ import { Event, Layer, Schedule, ScheduleType, ScheduleView, Shift, ShiftSwap } 
 import { UserHelper } from 'models/user/user.helpers';
 import { PageProps, WithStoreProps } from 'state/types';
 import { withMobXProviderContext } from 'state/withStore';
-import { HTML_ID, scrollToElement } from 'utils/DOM';
-import { isUserActionAllowed, UserActions } from 'utils/authorization/authorization';
-import { PLUGIN_ROOT } from 'utils/consts';
 
-import { getCalendarStartDate, getNewCalendarStartDate, getUTCString } from './Schedule.helpers';
+import {
+  getCalendarStartDate,
+  getNewCalendarStartDate,
+  getUTCString,
+  toDateWithTimezoneOffset,
+} from './Schedule.helpers';
 import { getScheduleStyles } from './Schedule.styles';
 
-interface SchedulePageProps extends PageProps, WithStoreProps, RouteComponentProps<{ id: string }> {
+interface RouteProps {
+  id: string;
+}
+
+interface SchedulePageProps extends PageProps, WithStoreProps, PropsWithRouter<RouteProps> {
   theme: GrafanaTheme2;
 }
 
@@ -74,7 +83,7 @@ interface SchedulePageState {
 @observer
 class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState> {
   highlightMyShiftsWasToggled = false;
-  scheduleId = this.props.match.params.id;
+  scheduleId = this.props.router.params.id;
 
   constructor(props: SchedulePageProps) {
     super(props);
@@ -118,7 +127,7 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
     const {
       store,
       query,
-      match: {
+      router: {
         params: { id: scheduleId },
       },
       theme,
@@ -179,7 +188,7 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
             <div>
               {isNotFoundError ? (
                 <div className={styles.notFound}>
-                  <VerticalGroup spacing="lg" align="center">
+                  <Stack direction="column" gap={StackSize.lg} alignItems="center">
                     <Text.Title level={1}>404</Text.Title>
                     <Text.Title level={4}>Schedule not found</Text.Title>
                     <PluginLink query={{ page: 'schedules', ...query }}>
@@ -187,12 +196,12 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
                         Go to Schedules page
                       </Button>
                     </PluginLink>
-                  </VerticalGroup>
+                  </Stack>
                 </div>
               ) : (
-                <VerticalGroup spacing="lg">
+                <Stack direction="column" gap={StackSize.lg}>
                   <div className={styles.header}>
-                    <HorizontalGroup justify="space-between">
+                    <Stack justifyContent="space-between">
                       <div className={styles.title}>
                         <PluginLink query={{ page: 'schedules', ...query }}>
                           <IconButton aria-label="Go Back" name="arrow-left" size="xl" />
@@ -207,20 +216,20 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
                         </Text.Title>
                         {schedule && <ScheduleQuality schedule={schedule} />}
                       </div>
-                      <HorizontalGroup spacing="lg">
+                      <Stack gap={StackSize.lg}>
                         {users && (
-                          <HorizontalGroup>
+                          <Stack>
                             <Text type="secondary">View in timezone:</Text>
                             <UserTimezoneSelect scheduleId={scheduleId} onChange={this.handleDateRangeUpdate} />
-                          </HorizontalGroup>
+                          </Stack>
                         )}
-                        <HorizontalGroup>
-                          <HorizontalGroup>
-                            <HorizontalGroup>
+                        <Stack>
+                          <Stack>
+                            <Stack>
                               <Button variant="secondary" onClick={this.handleExportClick()}>
                                 Export
                               </Button>
-                            </HorizontalGroup>
+                            </Stack>
 
                             {(schedule?.type === ScheduleType.Ical || schedule?.type === ScheduleType.Calendar) && (
                               <WithPermissionControlTooltip userAction={UserActions.SchedulesWrite}>
@@ -232,40 +241,64 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
                             <Dropdown
                               overlay={
                                 <Menu>
-                                  {layers?.map((layer, index) => (
-                                    <Menu.Item
-                                      key={index}
-                                      label={`L${layer.priority} rotation`}
-                                      onClick={() => {
-                                        scrollToElement(document.getElementById(HTML_ID.SCHEDULE_ROTATIONS));
+                                  <RenderConditionally
+                                    shouldRender={!disabledRotationForm}
+                                    render={() =>
+                                      layers?.map((layer, index) => (
+                                        <Menu.Item
+                                          key={index}
+                                          label={`L${layer.priority} rotation`}
+                                          onClick={() => {
+                                            scrollToElement(document.getElementById(HTML_ID.SCHEDULE_ROTATIONS));
 
-                                        this.handleShowRotationForm('new', layer.priority);
-                                      }}
-                                    />
-                                  ))}
-                                  <Menu.Item
-                                    label="New layer with rotation"
-                                    onClick={() => {
-                                      scrollToElement(document.getElementById(HTML_ID.SCHEDULE_ROTATIONS));
-
-                                      this.handleShowRotationForm('new', nextPriority);
-                                    }}
+                                            this.handleShowRotationForm('new', layer.priority);
+                                          }}
+                                        />
+                                      ))
+                                    }
                                   />
-                                  <Menu.Item
-                                    label="Shift swap request"
-                                    onClick={() => {
-                                      scrollToElement(document.getElementById(HTML_ID.SCHEDULE_OVERRIDES_AND_SWAPS));
+                                  <RenderConditionally
+                                    shouldRender={!disabledRotationForm}
+                                    render={() => (
+                                      <Menu.Item
+                                        label="New layer with rotation"
+                                        onClick={() => {
+                                          scrollToElement(document.getElementById(HTML_ID.SCHEDULE_ROTATIONS));
 
-                                      this.handleShowShiftSwapForm('new');
-                                    }}
+                                          this.handleShowRotationForm('new', nextPriority);
+                                        }}
+                                      />
+                                    )}
                                   />
-                                  <Menu.Item
-                                    label="Override"
-                                    onClick={() => {
-                                      scrollToElement(document.getElementById(HTML_ID.SCHEDULE_OVERRIDES_AND_SWAPS));
+                                  <RenderConditionally
+                                    shouldRender={!disabledShiftSwaps}
+                                    render={() => (
+                                      <Menu.Item
+                                        label="Shift swap request"
+                                        onClick={() => {
+                                          scrollToElement(
+                                            document.getElementById(HTML_ID.SCHEDULE_OVERRIDES_AND_SWAPS)
+                                          );
 
-                                      this.handleShowOverridesForm('new');
-                                    }}
+                                          this.handleShowShiftSwapForm('new');
+                                        }}
+                                      />
+                                    )}
+                                  />
+                                  <RenderConditionally
+                                    shouldRender={!disabledOverrideForm}
+                                    render={() => (
+                                      <Menu.Item
+                                        label="Override"
+                                        onClick={() => {
+                                          scrollToElement(
+                                            document.getElementById(HTML_ID.SCHEDULE_OVERRIDES_AND_SWAPS)
+                                          );
+
+                                          this.handleShowOverridesForm('new');
+                                        }}
+                                      />
+                                    )}
                                   />
                                 </Menu>
                               }
@@ -275,7 +308,7 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
                                 <Button icon="angle-down" />
                               </ButtonGroup>
                             </Dropdown>
-                          </HorizontalGroup>
+                          </Stack>
                           <ToolbarButton
                             icon="cog"
                             tooltip="Settings"
@@ -286,9 +319,9 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
                           <WithConfirm>
                             <ToolbarButton icon="trash-alt" tooltip="Delete" onClick={this.handleDelete} />
                           </WithConfirm>
-                        </HorizontalGroup>
-                      </HorizontalGroup>
-                    </HorizontalGroup>
+                        </Stack>
+                      </Stack>
+                    </Stack>
                   </div>
                   <div className={styles.usersTimezone}>
                     <UsersTimezones
@@ -304,19 +337,19 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
 
                   <div className={styles.rotations}>
                     <div className={styles.controls}>
-                      <HorizontalGroup justify="space-between">
-                        <HorizontalGroup>
+                      <Stack justifyContent="space-between">
+                        <Stack>
                           <Button variant="secondary" onClick={this.handleTodayClick}>
                             Today
                           </Button>
-                          <HorizontalGroup spacing="xs">
+                          <Stack gap={StackSize.xs}>
                             <Button variant="secondary" onClick={this.handleLeftClick}>
                               <Icon name="angle-left" />
                             </Button>
                             <Button variant="secondary" onClick={this.handleRightClick}>
                               <Icon name="angle-right" />
                             </Button>
-                          </HorizontalGroup>
+                          </Stack>
                           <Text.Title style={{ marginLeft: '8px', whiteSpace: 'nowrap' }} level={5} type="primary">
                             {store.timezoneStore.calendarStartDate.format('DD MMM')} -{' '}
                             {store.timezoneStore.calendarStartDate
@@ -354,37 +387,39 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
                               onClose={() => this.setState({ calendarStartDatePickerIsOpen: false })}
                             />
                           </div>
-                        </HorizontalGroup>
-                        <HorizontalGroup>
-                          <RadioButtonGroup
-                            options={[
-                              { label: ScheduleView.OneWeek, value: ScheduleView.OneWeek },
-                              { label: ScheduleView.TwoWeeks, value: ScheduleView.TwoWeeks },
-                              { label: ScheduleView.OneMonth, value: ScheduleView.OneMonth },
-                            ]}
-                            value={scheduleView}
-                            onChange={(value) => {
-                              scheduleStore.setScheduleView(value);
-                              if (value === ScheduleView.OneMonth) {
-                                timezoneStore.setCalendarStartDate(
-                                  getCalendarStartDate(
-                                    timezoneStore.calendarStartDate.endOf('isoWeek').startOf('month'),
-                                    value,
-                                    timezoneStore.selectedTimezoneOffset
-                                  )
-                                );
-                              }
+                        </Stack>
+                        <Stack>
+                          <div data-testid="schedule-view-picker">
+                            <RadioButtonGroup
+                              options={[
+                                { label: ScheduleView.OneWeek, value: ScheduleView.OneWeek },
+                                { label: ScheduleView.TwoWeeks, value: ScheduleView.TwoWeeks },
+                                { label: ScheduleView.OneMonth, value: ScheduleView.OneMonth },
+                              ]}
+                              value={scheduleView}
+                              onChange={(value) => {
+                                scheduleStore.setScheduleView(value);
+                                if (value === ScheduleView.OneMonth) {
+                                  timezoneStore.setCalendarStartDate(
+                                    getCalendarStartDate(
+                                      timezoneStore.calendarStartDate.endOf('isoWeek').startOf('month'),
+                                      value,
+                                      timezoneStore.selectedTimezoneOffset
+                                    )
+                                  );
+                                }
 
-                              scheduleStore.refreshEvents(scheduleId);
-                            }}
-                          />
+                                scheduleStore.refreshEvents(scheduleId);
+                              }}
+                            />
+                          </div>
                           <ScheduleFilters
                             value={filters}
                             onChange={(value) => this.setState({ filters: value })}
                             currentUserPk={store.userStore.currentUserPk}
                           />
-                        </HorizontalGroup>
-                      </HorizontalGroup>
+                        </Stack>
+                      </Stack>
                     </div>
                     <ScheduleFinal
                       scheduleId={scheduleId}
@@ -417,7 +452,7 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
                         layerPriorityToShowRotationForm={layerPriorityToShowRotationForm}
                         onShowRotationForm={this.handleShowRotationForm}
                         onShowOverrideForm={this.handleShowOverridesForm}
-                        disabled={disabledRotationForm}
+                        disabled={Boolean(disabledRotationForm)}
                         filters={filters}
                         onShowShiftSwapForm={!shiftSwapIdToShowForm ? this.handleShowShiftSwapForm : undefined}
                         onSlotClick={shiftSwapIdToShowForm ? this.adjustShiftSwapForm : undefined}
@@ -431,9 +466,9 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
                         onUpdate={this.refreshEventsAndClearPreview}
                         onDelete={this.refreshEventsAndClearPreview}
                         shiftIdToShowRotationForm={shiftIdToShowOverridesForm}
-                        onShowRotationForm={this.handleShowOverridesForm}
-                        disabled={disabledOverrideForm}
-                        disableShiftSwaps={disabledShiftSwaps}
+                        onShowOverridesForm={this.handleShowOverridesForm}
+                        disabled={Boolean(disabledOverrideForm)}
+                        disableShiftSwaps={Boolean(disabledShiftSwaps)}
                         shiftStartToShowOverrideForm={shiftStartToShowOverrideForm}
                         shiftEndToShowOverrideForm={shiftEndToShowOverrideForm}
                         onShowShiftSwapForm={!shiftSwapIdToShowForm ? this.handleShowShiftSwapForm : undefined}
@@ -441,7 +476,7 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
                       />
                     </div>
                   </div>
-                </VerticalGroup>
+                </Stack>
               )}
             </div>
             {showEditForm && schedule && (
@@ -481,7 +516,7 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
   update = async () => {
     const {
       store,
-      match: {
+      router: {
         params: { id: scheduleId },
       },
     } = this.props;
@@ -507,7 +542,7 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
   handleNameChange = async (value: string) => {
     const {
       store,
-      match: {
+      router: {
         params: { id: scheduleId },
       },
     } = this.props;
@@ -600,14 +635,14 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
   handleDelete = async () => {
     const {
       store,
-      match: {
+      router: {
         params: { id },
+        navigate,
       },
-      history,
     } = this.props;
 
     await store.scheduleStore.delete(id);
-    history.replace(`${PLUGIN_ROOT}/schedules`);
+    navigate(`${PLUGIN_ROOT}/schedules`, { replace: true });
   };
 
   handleShowShiftSwapForm = (id: ShiftSwap['id'] | 'new', swap?: { swap_start: string; swap_end: string }) => {
@@ -616,9 +651,9 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
       store,
       store: {
         userStore: { currentUserPk },
-        timezoneStore: { currentDateInSelectedTimezone },
+        timezoneStore: { currentDateInSelectedTimezone, selectedTimezoneOffset },
       },
-      match: {
+      router: {
         params: { id: scheduleId },
       },
     } = this.props;
@@ -640,11 +675,14 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
 
     const layers = getLayersFromStore(store, scheduleId, store.timezoneStore.calendarStartDate);
     const closestEvent = findClosestUserEvent(dayjs(), currentUserPk, layers);
+
     const swapStart = closestEvent
-      ? dayjs(closestEvent.start)
+      ? toDateWithTimezoneOffset(dayjs(closestEvent.start), selectedTimezoneOffset)
       : currentDateInSelectedTimezone.startOf('day').add(1, 'day');
 
-    const swapEnd = closestEvent ? dayjs(closestEvent.end) : swapStart.add(1, 'day');
+    const swapEnd = closestEvent
+      ? toDateWithTimezoneOffset(dayjs(closestEvent.end), selectedTimezoneOffset)
+      : swapStart.add(1, 'day');
 
     const params = {
       swap_start: getUTCString(swapStart),
@@ -691,4 +729,6 @@ class _SchedulePage extends React.Component<SchedulePageProps, SchedulePageState
   };
 }
 
-export const SchedulePage = withRouter(withMobXProviderContext(withTheme2(_SchedulePage)));
+export const SchedulePage = withRouter<RouteProps, Omit<SchedulePageProps, 'store' | 'meta' | 'theme'>>(
+  withMobXProviderContext(withTheme2(_SchedulePage))
+);

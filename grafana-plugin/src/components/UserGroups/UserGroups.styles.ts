@@ -1,6 +1,6 @@
 import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { COLORS } from 'styles/utils.styles';
+import { Colors } from 'styles/utils.styles';
 
 export const getUserGroupStyles = (theme: GrafanaTheme2) => {
   return {
@@ -10,8 +10,8 @@ export const getUserGroupStyles = (theme: GrafanaTheme2) => {
 
     sortable: css`
       z-index: 1062;
-      box-shadow: var(--focused-box-shadow);
-      background: var(--hover-selected-hardcoded) !important;
+      box-shadow: ${theme.isDark ? 'rgb(17 18 23) 0 0 0 2px, rgb(61 113 217) 0 0 0 4px;' : ''};
+      background: ${theme.isDark ? '#34363d' : ''};
     `,
 
     separator: css`
@@ -59,7 +59,7 @@ export const getUserGroupStyles = (theme: GrafanaTheme2) => {
 
     icon: css`
       display: block;
-      color: ${COLORS.ALWAYS_GREY};
+      color: ${Colors.ALWAYS_GREY};
 
       &:hover {
         color: #fff;

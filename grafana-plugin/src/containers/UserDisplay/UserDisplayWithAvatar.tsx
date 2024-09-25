@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 
-import { HorizontalGroup } from '@grafana/ui';
+import { Stack } from '@grafana/ui';
+import { StackSize } from 'helpers/consts';
 import { observer } from 'mobx-react';
 
 import { Avatar } from 'components/Avatar/Avatar';
@@ -27,9 +28,9 @@ export const UserDisplayWithAvatar = observer(({ id }: UserDisplayProps) => {
   }
 
   return (
-    <HorizontalGroup spacing="xs">
+    <Stack gap={StackSize.xs}>
       <Avatar size="small" src={user.avatar}></Avatar>
       <Text type="primary">{user.email}</Text>
-    </HorizontalGroup>
+    </Stack>
   );
 });

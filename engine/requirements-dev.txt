@@ -6,7 +6,7 @@ asgiref==3.7.2
     #   django
 celery-types==0.18.0
     # via -r requirements-dev.in
-certifi==2024.2.2
+certifi==2024.7.4
     # via
     #   -c requirements.txt
     #   requests
@@ -18,7 +18,7 @@ charset-normalizer==3.3.2
     #   requests
 distlib==0.3.8
     # via virtualenv
-django==4.2.11
+django==4.2.15
     # via
     #   -c requirements.txt
     #   django-stubs
@@ -52,7 +52,7 @@ httpretty==1.1.4
     # via -r requirements-dev.in
 identify==2.5.34
     # via pre-commit
-idna==3.6
+idna==3.7
     # via
     #   -c requirements.txt
     #   requests
@@ -106,11 +106,11 @@ pyyaml==6.0.1
     # via
     #   -c requirements.txt
     #   pre-commit
-requests==2.32.0
+requests==2.32.3
     # via
     #   -c requirements.txt
     #   djangorestframework-stubs
-setuptools==70.0.0
+setuptools==73.0.0
     # via
     #   -c requirements.txt
     #   nodeenv
@@ -156,7 +156,7 @@ typing-extensions==4.9.0
     #   djangorestframework-stubs
     #   mypy
     #   pytest-factoryboy
-urllib3==1.26.18
+urllib3==1.26.19
     # via
     #   -c requirements.txt
     #   requests

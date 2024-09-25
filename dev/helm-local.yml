@@ -55,7 +55,7 @@ grafana:
         - name: DATABASE_PASSWORD
           value: oncallpassword
   env:
-    GF_FEATURE_TOGGLES_ENABLE: topnav
+    GF_FEATURE_TOGGLES_ENABLE: topnav,externalServiceAccounts
     GF_SECURITY_ADMIN_PASSWORD: oncall
     GF_SECURITY_ADMIN_USER: oncall
     GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: grafana-oncall-app
@@ -124,6 +124,14 @@ service:
   nodePort: 30001
 prometheus:
   enabled: true
+  alertmanager:
+    enabled: false
+  kube-state-metrics:
+    enabled: false
+  prometheus-node-exporter:
+    enabled: false
+  prometheus-pushgateway:
+    enabled: false
   server:
     global:
       scrape_interval: 10s

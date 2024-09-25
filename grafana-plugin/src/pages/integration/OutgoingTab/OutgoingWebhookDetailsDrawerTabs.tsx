@@ -1,6 +1,8 @@
 import React, { FC } from 'react';
 
-import { Button, ConfirmModal, HorizontalGroup, useStyles2, VerticalGroup } from '@grafana/ui';
+import { Button, ConfirmModal, useStyles2, Stack } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { useCommonStyles, useConfirmModal } from 'helpers/hooks';
 import { observer } from 'mobx-react';
 import { useForm, FormProvider } from 'react-hook-form';
 
@@ -9,8 +11,6 @@ import { Tabs } from 'components/Tabs/Tabs';
 import { WebhookLastEventDetails } from 'components/Webhooks/WebhookLastEventDetails';
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { useCommonStyles, useConfirmModal } from 'utils/hooks';
 
 import { useDrawerWebhook, useIntegrationIdFromUrl } from './OutgoingTab.hooks';
 import { getStyles } from './OutgoingTab.styles';
@@ -81,12 +81,12 @@ const Settings: FC<SettingsProps> = observer(({ closeDrawer }) => {
       <ConfirmModal {...modalProps} />
       <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className={styles.form}>
-          <VerticalGroup justify="space-between">
+          <Stack direction="column" justifyContent="space-between">
             <div className={styles.formFieldsWrapper}>
               <OutgoingWebhookFormFields webhookId={webhook.id} />
             </div>
             <div className={commonStyles.bottomDrawerButtons}>
-              <HorizontalGroup justify="flex-end">
+              <Stack justifyContent="flex-end">
                 <Button variant="secondary" onClick={closeDrawer}>
                   Close
                 </Button>
@@ -105,9 +105,9 @@ const Settings: FC<SettingsProps> = observer(({ closeDrawer }) => {
                     Delete
                   </Button>
                 </WithPermissionControlTooltip>
-              </HorizontalGroup>
+              </Stack>
             </div>
-          </VerticalGroup>
+          </Stack>
         </form>
       </FormProvider>
     </>
@@ -130,11 +130,11 @@ const LastEventDetails: FC<LastEventDetailsProps> = observer(({ closeDrawer }) =
     <div>
       <WebhookLastEventDetails webhook={webhook} sourceCodeRootClassName={styles.sourceCodeRoot} />
       <div className={commonStyles.bottomDrawerButtons}>
-        <HorizontalGroup justify="flex-end">
+        <Stack justifyContent="flex-end">
           <Button variant="secondary" onClick={closeDrawer}>
             Close
           </Button>
-        </HorizontalGroup>
+        </Stack>
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
 import React, { useCallback } from 'react';
 
-import { Button, HorizontalGroup, Icon, LoadingPlaceholder, Tooltip } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { css } from '@emotion/css';
+import { Button, Icon, LoadingPlaceholder, Stack, Tooltip, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
 import { get } from 'lodash-es';
 import { observer } from 'mobx-react';
 
-import NotificationPolicy from 'components/Policy/NotificationPolicy';
+import { NotificationPolicy } from 'components/Policy/NotificationPolicy';
 import { SortableList } from 'components/SortableList/SortableList';
 import { Text } from 'components/Text/Text';
 import { Timeline } from 'components/Timeline/Timeline';
@@ -14,14 +15,9 @@ import { NotificationPolicyType } from 'models/notification_policy/notification_
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { AppFeature } from 'state/features';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
 
 import { getColor } from './PersonalNotificationSettings.helpers';
 import img from './img/default-step.png';
-
-import styles from './PersonalNotificationSettings.module.css';
-
-const cx = cn.bind(styles);
 
 interface PersonalNotificationSettingsProps {
   userPk: ApiSchemas['User']['pk'];
@@ -41,6 +37,8 @@ export const PersonalNotificationSettings = observer((props: PersonalNotificatio
     },
     [userPk, userStore]
   );
+
+  const styles = useStyles2(getStyles);
 
   const getAddNotificationPolicyHandler = useCallback(() => {
     return () => {
@@ -65,8 +63,8 @@ export const PersonalNotificationSettings = observer((props: PersonalNotificatio
   const allNotificationPolicies = userStore.notificationPolicies[userPk];
   const title = (
     <Text.Title level={5}>
-      <HorizontalGroup>
-        {isImportant ? 'Important Notifications' : 'Default Notifications'}
+      <Stack>
+        {isImportant ? 'Important notification rules' : 'Default notification rules'}
         <Tooltip
           placement="top"
           content={
@@ -77,13 +75,13 @@ export const PersonalNotificationSettings = observer((props: PersonalNotificatio
         >
           <Icon name="info-circle" size="md"></Icon>
         </Tooltip>
-      </HorizontalGroup>
+      </Stack>
     </Text.Title>
   );
 
   if (!allNotificationPolicies) {
     return (
-      <div className={cx('root')}>
+      <div className={styles.root}>
         {title}
         <LoadingPlaceholder text="Loading..." />
       </div>
@@ -116,12 +114,11 @@ export const PersonalNotificationSettings = observer((props: PersonalNotificatio
     store.hasFeature(AppFeature.CloudConnection) && !store.cloudStore.cloudConnectionStatus.cloud_connection_status;
 
   return (
-    <div className={cx('root')}>
+    <div className={styles.root}>
       {title}
-      {/* @ts-ignore */}
       <SortableList
-        helperClass={cx('sortable-helper')}
-        className={cx('steps')}
+        helperClass={styles.sortableHelper}
+        className={styles.steps}
         axis="y"
         lockAxis="y"
         onSortEnd={getNotificationPolicySortEndHandler(offset)}
@@ -154,10 +151,10 @@ export const PersonalNotificationSettings = observer((props: PersonalNotificatio
           number={notificationPolicies.length + 1}
           backgroundHexNumber={getColor(notificationPolicies.length)}
         >
-          <div className={cx('step')}>
+          <div className={styles.step}>
             <WithPermissionControlTooltip userAction={userAction}>
               <Button icon="plus" variant="secondary" fill="text" onClick={getAddNotificationPolicyHandler()}>
-                Add Notification Step
+                Add notification step
               </Button>
             </WithPermissionControlTooltip>
           </div>
@@ -166,3 +163,25 @@ export const PersonalNotificationSettings = observer((props: PersonalNotificatio
     </div>
   );
 });
+
+const getStyles = () => {
+  return {
+    root: css`
+      margin-bottom: 25px;
+    `,
+
+    step: css`
+      display: flex;
+      align-items: center;
+      margin-left: 10px;
+    `,
+
+    steps: css`
+      margin: 15px 0 0 15px;
+    `,
+
+    sortableHelper: css`
+      z-index: 1062;
+    `,
+  };
+};

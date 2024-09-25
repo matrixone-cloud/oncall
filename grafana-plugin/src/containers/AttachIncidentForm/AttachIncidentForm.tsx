@@ -1,8 +1,9 @@
 import React, { useCallback, useState } from 'react';
 
+import { css, cx } from '@emotion/css';
 import { SelectableValue } from '@grafana/data';
-import { Button, Field, HorizontalGroup, Icon, Modal } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { Button, Field, Icon, Modal, Stack } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
 import { observer } from 'mobx-react';
 import moment from 'moment-timezone';
 
@@ -12,11 +13,6 @@ import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/W
 import { AlertGroupHelper } from 'models/alertgroup/alertgroup.helpers';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
-
-import styles from './AttachIncidentForm.module.css';
-
-const cx = cn.bind(styles);
 
 interface AttachIncidentFormProps {
   id: ApiSchemas['AlertGroup']['pk'];
@@ -42,7 +38,11 @@ const GroupedAlertNumber = observer(({ value }: GroupedAlertNumberProps) => {
 export const AttachIncidentForm = observer(({ id, onUpdate, onHide }: AttachIncidentFormProps) => {
   const store = useStore();
 
-  const { alertGroupStore } = store;
+  const {
+    alertGroupStore,
+    // dereferencing alerts is needed to rerender GSelect
+    alertGroupStore: { alerts: alertGroupAlerts },
+  } = store;
 
   const [selected, setSelected] = useState<ApiSchemas['AlertGroup']['pk']>(undefined);
 
@@ -61,12 +61,14 @@ export const AttachIncidentForm = observer(({ id, onUpdate, onHide }: AttachInci
       isOpen
       icon="link"
       title={
-        <HorizontalGroup>
+        <Stack>
           <Icon size="lg" name="link" />
           <Text.Title level={4}>Attach to another alert group</Text.Title>
-        </HorizontalGroup>
+        </Stack>
       }
-      className={cx('root')}
+      className={css`
+        display: block;
+      `}
       onDismiss={onHide}
     >
       <Field
@@ -75,7 +77,7 @@ export const AttachIncidentForm = observer(({ id, onUpdate, onHide }: AttachInci
       >
         <WithPermissionControlTooltip userAction={UserActions.AlertGroupsWrite}>
           <GSelect<ApiSchemas['AlertGroup']>
-            items={Object.fromEntries(alertGroupStore.alerts)}
+            items={Object.fromEntries(alertGroupAlerts)}
             fetchItemsFn={async (query: string) => {
               await alertGroupStore.fetchAlertGroups(false, query);
             }}
@@ -93,14 +95,14 @@ export const AttachIncidentForm = observer(({ id, onUpdate, onHide }: AttachInci
           />
         </WithPermissionControlTooltip>
       </Field>
-      <HorizontalGroup>
+      <Stack>
         <Button onClick={onHide} variant="secondary">
           Cancel
         </Button>
         <Button onClick={handleLinkClick} variant="primary" disabled={!selected}>
           Attach
         </Button>
-      </HorizontalGroup>
+      </Stack>
     </Modal>
   );
 });

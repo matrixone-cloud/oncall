@@ -1,4 +1,4 @@
-import React, { FC, PropsWithChildren } from 'react';
+import React, { FC, PropsWithChildren, ReactElement } from 'react';
 
 import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
@@ -8,7 +8,7 @@ import ReactModal from 'react-modal';
 ReactModal.setAppElement('#reactRoot');
 
 export interface ModalProps {
-  title?: string | JSX.Element;
+  title?: string | ReactElement;
   className?: string;
   contentClassName?: string;
   closeOnEscape?: boolean;
@@ -66,7 +66,7 @@ const getStyles = (theme: GrafanaTheme2) => {
       padding: 15px;
       background: ${theme.colors.background.primary};
       border: 1px solid ${theme.colors.border.weak};
-      box-shadow: var(--shadows-z3);
+      box-shadow: ${theme.shadows.z3};
       border-radius: 2px;
       z-index: 10;
     `,

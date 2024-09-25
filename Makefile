@@ -141,7 +141,7 @@ init:  ## build the frontend plugin code then run make start
 # this makes sure that it will be available when the grafana container starts up without the need to
 # restart the grafana container initially
 ifeq ($(findstring $(UI_PROFILE),$(COMPOSE_PROFILES)),$(UI_PROFILE))
-	$(call run_ui_docker_command,yarn install && yarn build:dev)
+	$(call run_ui_docker_command,pnpm install && pnpm build:dev)
 endif
 
 stop:  # stop all of the docker containers
@@ -156,7 +156,8 @@ build:  ## rebuild images (e.g. when changing requirements.txt)
 cleanup: stop  ## this will remove all of the images, containers, volumes, and networks
                ## associated with your local OnCall developer setup
 	$(call echo_deprecation_message)
-	docker system prune --filter label="$(DOCKER_COMPOSE_DEV_LABEL)" --all --volumes
+	docker system prune --filter label="$(DOCKER_COMPOSE_DEV_LABEL)" --all --volumes --force
+	docker volume prune --filter label="$(DOCKER_COMPOSE_DEV_LABEL)" --all --force
 
 install-pre-commit:
 	@if [ ! -x "$$(command -v pre-commit)" ]; then \
@@ -167,7 +168,7 @@ install-pre-commit:
 	fi
 
 lint: install-pre-commit  ## run both frontend and backend linters
-                          ## may need to run `yarn install` from within `grafana-plugin`
+                          ## may need to run `pnpm install` from within `grafana-plugin`
                           ## to install several `pre-commit` dependencies
 	pre-commit run --all-files
 
@@ -202,25 +203,25 @@ engine-manage:  ## run Django's `manage.py` script, inside of a docker container
 	$(call run_engine_docker_command,python manage.py $(CMD))
 
 test-e2e:  ## run the e2e tests in headless mode
-	yarn --cwd grafana-plugin test:e2e
+	pnpm --dir grafana-plugin test:e2e
 
 test-e2e-watch:  ## start e2e tests in watch mode
-	yarn --cwd grafana-plugin test:e2e:watch
+	pnpm --dir grafana-plugin test:e2e:watch
 
 test-e2e-show-report:  ## open last e2e test report
-	yarn --cwd grafana-plugin playwright show-report
+	pnpm --dir grafana-plugin playwright show-report
 
 ui-test:  ## run the UI tests
-	$(call run_ui_docker_command,yarn test)
+	$(call run_ui_docker_command,pnpm test)
 
 ui-lint:  ## run the UI linter
-	$(call run_ui_docker_command,yarn lint)
+	$(call run_ui_docker_command,pnpm lint)
 
 ui-build:  ## build the UI
-	$(call run_ui_docker_command,yarn build)
+	$(call run_ui_docker_command,pnpm build)
 
 ui-command:  ## run any command, inside of a UI docker container, passing `$CMD` as arguments.
-             ## e.g. `make ui-command CMD="yarn test"`
+             ## e.g. `make ui-command CMD="pnpm test"`
 	$(call run_ui_docker_command,$(CMD))
 
 exec-engine:  ## exec into engine container's bash
@@ -245,7 +246,7 @@ pip-compile-locked-dependencies:  ## compile engine requirements.txt files
 define backend_command
 	export `grep -v '^#' $(DEV_ENV_FILE) | xargs -0` && \
 	export BROKER_TYPE=$(BROKER_TYPE) && \
-	. ./venv/bin/activate && \
+	. $(VENV_DIR)/bin/activate && \
 	cd engine && \
 	$(1)
 endef
@@ -253,9 +254,9 @@ endef
 backend-bootstrap:
 	python3.12 -m venv $(VENV_DIR)
 	$(VENV_DIR)/bin/pip install -U pip wheel uv
-	$(VENV_DIR)/bin/uv pip sync $(REQUIREMENTS_TXT) $(REQUIREMENTS_DEV_TXT)
+	$(VENV_DIR)/bin/uv pip sync --python=$(VENV_DIR)/bin/python $(REQUIREMENTS_TXT) $(REQUIREMENTS_DEV_TXT)
 	@if [ -f $(REQUIREMENTS_ENTERPRISE_TXT) ]; then \
-		$(VENV_DIR)/bin/uv pip install -r $(REQUIREMENTS_ENTERPRISE_TXT); \
+		$(VENV_DIR)/bin/uv pip install --python=$(VENV_DIR)/bin/python -r $(REQUIREMENTS_ENTERPRISE_TXT); \
 	fi
 
 backend-migrate:

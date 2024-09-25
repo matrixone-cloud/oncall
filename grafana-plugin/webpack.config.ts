@@ -1,10 +1,8 @@
-import { Configuration, DefinePlugin, EnvironmentPlugin } from 'webpack';
+import { Configuration, EnvironmentPlugin } from 'webpack';
 import LiveReloadPlugin from 'webpack-livereload-plugin';
 import { mergeWithRules, CustomizeRule } from 'webpack-merge';
 
 import grafanaConfig from './.config/webpack/webpack.config';
-
-const dotenv = require('dotenv');
 
 const config = async (env): Promise<Configuration> => {
   const baseConfig = await grafanaConfig(env);
@@ -61,12 +59,19 @@ const config = async (env): Promise<Configuration> => {
     },
     plugins: [
       ...(baseConfig.plugins?.filter((plugin) => !(plugin instanceof LiveReloadPlugin)) || []),
-      ...(env.development ? [new LiveReloadPlugin({ appendScriptTag: true, useSourceHash: true })] : []),
+      ...(env.development
+        ? [
+            new LiveReloadPlugin({
+              appendScriptTag: true,
+              useSourceHash: true,
+              protocol: 'http',
+              hostname: 'localhost',
+            }),
+          ]
+        : []),
       new EnvironmentPlugin({
-        ONCALL_API_URL: null,
-      }),
-      new DefinePlugin({
-        'process.env': JSON.stringify(dotenv.config().parsed),
+        NODE_ENV: 'development',
+        PLUGIN_ID: 'grafana-oncall-app',
       }),
     ],
   };

@@ -1,18 +1,22 @@
 import datetime
+import typing
 from enum import unique
 from typing import Tuple
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
-from django.db import IntegrityError, models
-from django.db.models import Q
+from django.db import models
 
 from apps.base.messaging import get_messaging_backends
 from apps.user_management.models import User
-from common.exceptions import UserNotificationPolicyCouldNotBeDeleted
 from common.ordered_model.ordered_model import OrderedModel
 from common.public_primary_keys import generate_public_primary_key, increase_public_primary_key_length
+
+if typing.TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+
+    from apps.base.models import UserNotificationPolicyLogRecord
 
 
 def generate_public_primary_key_for_notification_policy():
@@ -66,32 +70,10 @@ def validate_channel_choice(value):
         raise ValidationError("%(value)s is not a valid option", params={"value": value})
 
 
-class UserNotificationPolicyQuerySet(models.QuerySet):
-    def create_default_policies_for_user(self, user: User) -> None:
-        if user.notification_policies.filter(important=False).exists():
-            return
-
-        policies_to_create = user.default_notification_policies_defaults
-
-        try:
-            super().bulk_create(policies_to_create)
-        except IntegrityError:
-            pass
-
-    def create_important_policies_for_user(self, user: User) -> None:
-        if user.notification_policies.filter(important=True).exists():
-            return
-
-        policies_to_create = user.important_notification_policies_defaults
-
-        try:
-            super().bulk_create(policies_to_create)
-        except IntegrityError:
-            pass
-
-
 class UserNotificationPolicy(OrderedModel):
-    objects = UserNotificationPolicyQuerySet.as_manager()
+    personal_log_records: "RelatedManager['UserNotificationPolicyLogRecord']"
+    user: typing.Optional[User]
+
     order_with_respect_to = ("user_id", "important")
 
     public_primary_key = models.CharField(
@@ -145,15 +127,33 @@ class UserNotificationPolicy(OrderedModel):
 
     @classmethod
     def get_short_verbals_for_user(cls, user: User) -> Tuple[Tuple[str, ...], Tuple[str, ...]]:
-        is_wait_step = Q(step=cls.Step.WAIT)
-        is_wait_step_configured = Q(wait_delay__isnull=False)
+        policies = user.notification_policies.all()
 
-        policies = cls.objects.filter(Q(user=user, step__isnull=False) & (~is_wait_step | is_wait_step_configured))
+        default = ()
+        important = ()
 
-        default = tuple(str(policy.short_verbal) for policy in policies if policy.important is False)
-        important = tuple(str(policy.short_verbal) for policy in policies if policy.important is True)
+        for policy in policies:
+            if policy.step is None or (policy.step == cls.Step.WAIT and policy.wait_delay is None):
+                continue
+            if policy.important:
+                important += (policy.short_verbal,)
+            else:
+                default += (policy.short_verbal,)
 
         return default, important
+
+    @staticmethod
+    def get_default_fallback_policy(user: User) -> "UserNotificationPolicy":
+        return UserNotificationPolicy(
+            user=user,
+            step=UserNotificationPolicy.Step.NOTIFY,
+            notify_by=settings.EMAIL_BACKEND_INTERNAL_ID,
+            # The important flag doesn't really matter here.. since we're just using this as a transient/fallacbk
+            # in-memory object (important is really only used for allowing users to group their
+            # notification policy steps)
+            important=False,
+            order=0,
+        )
 
     @property
     def short_verbal(self) -> str:
@@ -170,12 +170,6 @@ class UserNotificationPolicy(OrderedModel):
                 return self.get_wait_delay_display()
         else:
             return "Not set"
-
-    def delete(self):
-        if UserNotificationPolicy.objects.filter(important=self.important, user=self.user).count() == 1:
-            raise UserNotificationPolicyCouldNotBeDeleted("Can't delete last user notification policy")
-        else:
-            super().delete()
 
 
 class NotificationChannelOptions:

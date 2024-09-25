@@ -1,12 +1,11 @@
-import semver from 'semver';
-
 import { test, expect } from '../fixtures';
 import { resolveFiringAlert } from '../utils/alertGroup';
+import { isGrafanaVersionLowerThan } from '../utils/constants';
 import { createEscalationChain, EscalationStep } from '../utils/escalationChain';
 import { clickButton, generateRandomValue } from '../utils/forms';
 import { createIntegrationAndSendDemoAlert } from '../utils/integrations';
 import { goToGrafanaPage, goToOnCallPage } from '../utils/navigation';
-import { createOnCallScheduleWithRotation } from '../utils/schedule';
+import { createOnCallSchedule } from '../utils/schedule';
 
 /**
  * Insights is dependent on Scenes which were only added in Grafana 10.0.0
@@ -15,10 +14,7 @@ import { createOnCallScheduleWithRotation } from '../utils/schedule';
  * and use the currentGrafanaVersion fixture once this bugged is patched in playwright
  * https://github.com/microsoft/playwright/issues/29608
  */
-test.skip(
-  () => semver.lt(process.env.CURRENT_GRAFANA_VERSION, '10.0.0'),
-  'Insights is only available in Grafana 10.0.0 and above'
-);
+test.skip(() => isGrafanaVersionLowerThan('10.0.0'), 'Insights is only available in Grafana 10.0.0 and above');
 
 /**
  * skipping as these tests are currently flaky
@@ -66,7 +62,7 @@ test.describe.skip('Insights', () => {
     const escalationChainName = generateRandomValue();
     const integrationName = generateRandomValue();
     const onCallScheduleName = generateRandomValue();
-    await createOnCallScheduleWithRotation(page, onCallScheduleName, userName);
+    await createOnCallSchedule(page, onCallScheduleName, userName);
     await createEscalationChain(
       page,
       escalationChainName,

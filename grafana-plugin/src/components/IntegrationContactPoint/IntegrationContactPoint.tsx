@@ -1,19 +1,21 @@
 import React, { useEffect, useReducer } from 'react';
 
+import { css, cx } from '@emotion/css';
 import { SelectableValue } from '@grafana/data';
 import {
   Button,
   Drawer,
-  HorizontalGroup,
   Icon,
   IconButton,
   Input,
   RadioButtonGroup,
   Select,
   Tooltip,
-  VerticalGroup,
+  Stack,
+  useStyles2,
 } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { StackSize, GENERIC_ERROR } from 'helpers/consts';
+import { openNotification, openErrorNotification } from 'helpers/helpers';
 import { observer } from 'mobx-react';
 
 import { GTable } from 'components/GTable/GTable';
@@ -24,12 +26,8 @@ import { WithConfirm } from 'components/WithConfirm/WithConfirm';
 import { AlertReceiveChannelHelper } from 'models/alert_receive_channel/alert_receive_channel.helpers';
 import { ContactPoint } from 'models/alert_receive_channel/alert_receive_channel.types';
 import { ApiSchemas } from 'network/oncall-api/api.types';
-import styles from 'pages/integration/Integration.module.scss';
+import { getIntegrationStyles } from 'pages/integration/Integration.styles';
 import { useStore } from 'state/useStore';
-import { GENERIC_ERROR } from 'utils/consts';
-import { openErrorNotification, openNotification } from 'utils/utils';
-
-const cx = cn.bind(styles);
 
 interface IntegrationContactPointState {
   isLoading: boolean;
@@ -50,6 +48,7 @@ interface IntegrationContactPointState {
 export const IntegrationContactPoint: React.FC<{
   id: ApiSchemas['AlertReceiveChannel']['id'];
 }> = observer(({ id }) => {
+  const styles = useStyles2(getIntegrationStyles);
   const { alertReceiveChannelStore } = useStore();
   const contactPoints = alertReceiveChannelStore.connectedContactPoints[id];
   const warnings = contactPoints?.filter((cp) => !cp.notificationConnected);
@@ -109,46 +108,51 @@ export const IntegrationContactPoint: React.FC<{
     <IntegrationBlock
       noContent={true}
       heading={
-        <div className={cx('u-flex', 'u-flex-space-between')}>
+        <div
+          className={css`
+            display: flex;
+            justify-content: space-between;
+          `}
+        >
           {isDrawerOpen && (
             <Drawer scrollableContent title="Connected Contact Points" onClose={closeDrawer} closeOnMaskClick={false}>
-              <div className={cx('contactpoints__drawer')}>
+              <div>
                 <GTable
                   emptyText={'No contact points'}
-                  className={cx('contactpoints__table')}
+                  className={styles.contactPointsTable}
                   rowKey="id"
                   data={contactPoints}
                   columns={getTableColumns()}
                 />
 
-                <div className={cx('contactpoints__connect')}>
-                  <VerticalGroup spacing="md">
+                <div className={styles.contactPointsConnect}>
+                  <Stack direction="column" gap={StackSize.md}>
                     <div
-                      className={cx('contactpoints__connect-toggler')}
+                      className={styles.contactPointsConnectToggler}
                       onClick={() => setState({ isConnectOpen: !isConnectOpen })}
                     >
-                      <HorizontalGroup justify="space-between">
-                        <HorizontalGroup spacing="xs" align="center">
+                      <Stack justifyContent="space-between">
+                        <Stack gap={StackSize.xs} alignItems="center">
                           <Text type="primary">Grafana Alerting Contact point</Text>
                           <Icon name="info-circle" />
-                        </HorizontalGroup>
+                        </Stack>
 
                         {isConnectOpen ? <Icon name="arrow-down" /> : <Icon name="arrow-right" />}
-                      </HorizontalGroup>
+                      </Stack>
                     </div>
 
                     {renderConnectSection()}
-                  </VerticalGroup>
+                  </Stack>
                 </div>
               </div>
             </Drawer>
           )}
 
-          <HorizontalGroup spacing="md">
+          <Stack gap={StackSize.md}>
             <IntegrationTag>Contact point</IntegrationTag>
 
             {contactPoints?.length ? (
-              <HorizontalGroup>
+              <Stack>
                 <Text type="primary">
                   {contactPoints.length} contact point{contactPoints.length === 1 ? '' : 's'} connected
                 </Text>
@@ -157,22 +161,27 @@ export const IntegrationContactPoint: React.FC<{
                     content={'Check the notification policy for the contact point in Grafana Alerting'}
                     placement={'top'}
                   >
-                    <div className={cx('u-flex', 'u-flex-gap-xs')}>
+                    <div
+                      className={css`
+                        display: flex;
+                        gap: 4px;
+                      `}
+                    >
                       {renderExclamationIcon()}
                       <Text type="primary">{warnings.length} with error</Text>
                     </div>
                   </Tooltip>
                 )}
-              </HorizontalGroup>
+              </Stack>
             ) : (
-              <HorizontalGroup spacing="xs">
+              <Stack gap={StackSize.xs}>
                 {renderExclamationIcon()}
                 <Text type="primary" data-testid="integration-escalation-chain-not-selected">
                   Connect Alerting Contact point to receive alerts
                 </Text>
-              </HorizontalGroup>
+              </Stack>
             )}
-          </HorizontalGroup>
+          </Stack>
 
           <Button
             variant={'secondary'}
@@ -194,7 +203,7 @@ export const IntegrationContactPoint: React.FC<{
     }
 
     return (
-      <VerticalGroup spacing="md">
+      <Stack direction="column" gap={StackSize.md}>
         <RadioButtonGroup
           options={radioOptions}
           value={isExistingContactPoint ? 'existing' : 'new'}
@@ -233,7 +242,7 @@ export const IntegrationContactPoint: React.FC<{
           />
         )}
 
-        <HorizontalGroup align="center">
+        <Stack alignItems="center">
           <Button
             variant="primary"
             disabled={!selectedAlertManager || !selectedContactPoint || isLoading}
@@ -244,9 +253,18 @@ export const IntegrationContactPoint: React.FC<{
           <Button variant="secondary" onClick={closeDrawer}>
             Cancel
           </Button>
-          {isLoading && <Icon name="fa fa-spinner" size="md" className={cx('loadingPlaceholder')} />}
-        </HorizontalGroup>
-      </VerticalGroup>
+          {isLoading && (
+            <Icon
+              name="fa fa-spinner"
+              size="md"
+              className={css`
+                margin-bottom: 0;
+                margin-right: 4px;
+              `}
+            />
+          )}
+        </Stack>
+      </Stack>
     );
   }
 
@@ -263,7 +281,7 @@ export const IntegrationContactPoint: React.FC<{
     };
 
     return (
-      <HorizontalGroup spacing="md">
+      <Stack gap={StackSize.md}>
         <IconButton
           aria-label="Alert Manager"
           name="external-link-alt"
@@ -278,23 +296,23 @@ export const IntegrationContactPoint: React.FC<{
           title={`Disconnect Contact point`}
           confirmText="Disconnect"
           description={
-            <VerticalGroup spacing="md">
+            <Stack direction="column" gap={StackSize.md}>
               <Text type="primary">
                 When the contact point will be disconnected, the Integration will no longer receive alerts for it.
               </Text>
               <Text type="primary">You can add new contact point at any time.</Text>
-            </VerticalGroup>
+            </Stack>
           }
         >
           <IconButton aria-label="Disconnect Contact Point" name="trash-alt" onClick={onDisconnect} />
         </WithConfirm>
-      </HorizontalGroup>
+      </Stack>
     );
   }
 
   function renderContactPointName(item: ContactPoint) {
     return (
-      <HorizontalGroup spacing="xs">
+      <Stack gap={StackSize.xs}>
         <Text type="primary">{item.contactPoint}</Text>
 
         {!item.notificationConnected && (
@@ -305,7 +323,7 @@ export const IntegrationContactPoint: React.FC<{
             {renderExclamationIcon()}
           </Tooltip>
         )}
-      </HorizontalGroup>
+      </Stack>
     );
   }
 
@@ -315,7 +333,7 @@ export const IntegrationContactPoint: React.FC<{
 
   function renderExclamationIcon() {
     return (
-      <div className={cx('icon-exclamation')}>
+      <div className={cx(styles.iconExclamation)}>
         <Icon name="exclamation-triangle" />
       </div>
     );

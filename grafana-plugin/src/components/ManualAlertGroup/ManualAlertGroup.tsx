@@ -1,6 +1,8 @@
 import React, { FC, useCallback } from 'react';
 
-import { Button, Drawer, Field, HorizontalGroup, TextArea, useStyles2, VerticalGroup } from '@grafana/ui';
+import { css } from '@emotion/css';
+import { Button, Drawer, Field, TextArea, useStyles2, Stack } from '@grafana/ui';
+import { openWarningNotification } from 'helpers/helpers';
 import { observer } from 'mobx-react';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 import { getUtilStyles } from 'styles/utils.styles';
@@ -10,7 +12,6 @@ import { prepareForUpdate } from 'containers/AddResponders/AddResponders.helpers
 import { AlertReceiveChannelStore } from 'models/alert_receive_channel/alert_receive_channel';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useStore } from 'state/useStore';
-import { openWarningNotification } from 'utils/utils';
 
 export type FormData = {
   message: string;
@@ -50,7 +51,6 @@ export const ManualAlertGroup: FC<ManualAlertGroupProps> = observer(({ onCreate,
 
   const onSubmit = async (data: FormData) => {
     const transformedData = prepareForUpdate(selectedUserResponders, selectedTeamResponder, data);
-
     const resp = await directPagingStore.createManualAlertRule(transformedData);
 
     if (!resp) {
@@ -65,13 +65,14 @@ export const ManualAlertGroup: FC<ManualAlertGroupProps> = observer(({ onCreate,
     onHide();
   };
 
-  const utils = useStyles2(getUtilStyles);
+  const utilStyles = useStyles2(getUtilStyles);
+  const styles = useStyles2(getStyles);
 
   return (
     <Drawer scrollableContent title="New escalation" onClose={onHideDrawer} closeOnMaskClick={false} width="70%">
-      <VerticalGroup>
+      <Stack direction="column">
         <FormProvider {...formMethods}>
-          <form id="Manual Alert Group" onSubmit={handleSubmit(onSubmit)} className={utils.width100}>
+          <form id="Manual Alert Group" onSubmit={handleSubmit(onSubmit)} className={utilStyles.width100}>
             <Controller
               name="message"
               control={control}
@@ -82,20 +83,30 @@ export const ManualAlertGroup: FC<ManualAlertGroupProps> = observer(({ onCreate,
                 </Field>
               )}
             />
+
             <AddResponders mode="create" />
-            <div className="buttons">
-              <HorizontalGroup justify="flex-end">
+
+            <div className={styles.buttons}>
+              <Stack justifyContent="flex-end">
                 <Button variant="secondary" onClick={onHideDrawer}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={!formIsSubmittable}>
                   Create
                 </Button>
-              </HorizontalGroup>
+              </Stack>
             </div>
           </form>
         </FormProvider>
-      </VerticalGroup>
+      </Stack>
     </Drawer>
   );
 });
+
+const getStyles = () => {
+  return {
+    buttons: css`
+      padding-top: 12px;
+    `,
+  };
+};

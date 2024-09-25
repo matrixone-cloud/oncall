@@ -1,7 +1,8 @@
 import React, { useCallback, useState, useEffect } from 'react';
 
-import { Button, HorizontalGroup, Drawer, VerticalGroup } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { Button, Drawer, Stack, useStyles2 } from '@grafana/ui';
+import { LocationHelper } from 'helpers/LocationHelper';
+import { UserActions } from 'helpers/authorization/authorization';
 import { debounce } from 'lodash-es';
 import { observer } from 'mobx-react';
 
@@ -17,20 +18,17 @@ import {
 } from 'components/CheatSheet/CheatSheet.config';
 import { MonacoEditor } from 'components/MonacoEditor/MonacoEditor';
 import { Text } from 'components/Text/Text';
+import { TemplatePage } from 'containers/TemplatePreview/TemplatePreview';
 import { TemplateResult } from 'containers/TemplateResult/TemplateResult';
-import { TemplatesAlertGroupsList, TEMPLATE_PAGE } from 'containers/TemplatesAlertGroupsList/TemplatesAlertGroupsList';
+import { TemplatesAlertGroupsList } from 'containers/TemplatesAlertGroupsList/TemplatesAlertGroupsList';
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
 import { AlertTemplatesDTO } from 'models/alert_templates/alert_templates';
 import { ChannelFilter } from 'models/channel_filter/channel_filter.types';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { IntegrationTemplateOptions, LabelTemplateOptions } from 'pages/integration/IntegrationCommon.config';
 import { useStore } from 'state/useStore';
-import { LocationHelper } from 'utils/LocationHelper';
-import { UserActions } from 'utils/authorization/authorization';
 
-import styles from './IntegrationTemplate.module.scss';
-
-const cx = cn.bind(styles);
+import { getIntegrationTemplateStyles } from './IntegrationTemplate.styles';
 
 interface IntegrationTemplateProps {
   id: ApiSchemas['AlertReceiveChannel']['id'];
@@ -53,6 +51,7 @@ export const IntegrationTemplate = observer((props: IntegrationTemplateProps) =>
   const [resultError, setResultError] = useState<string>(undefined);
   const [isRecentAlertGroupExisting, setIsRecentAlertGroupExisting] = useState<boolean>(false);
 
+  const styles = useStyles2(getIntegrationTemplateStyles);
   const store = useStore();
 
   useEffect(() => {
@@ -163,14 +162,14 @@ export const IntegrationTemplate = observer((props: IntegrationTemplateProps) =>
   return (
     <Drawer
       title={
-        <div className={cx('title-container')}>
-          <HorizontalGroup justify="space-between" align="flex-start">
-            <VerticalGroup>
+        <div className={styles.titleContainer}>
+          <Stack justifyContent="space-between" alignItems="flex-start">
+            <Stack direction="column">
               <Text.Title level={3}>Edit {template.displayName} template</Text.Title>
               {template.description && <Text type="secondary">{template.description}</Text>}
-            </VerticalGroup>
+            </Stack>
 
-            <HorizontalGroup>
+            <Stack>
               <WithPermissionControlTooltip userAction={UserActions.IntegrationsWrite}>
                 <Button variant="secondary" onClick={onHide}>
                   Cancel
@@ -181,18 +180,18 @@ export const IntegrationTemplate = observer((props: IntegrationTemplateProps) =>
                   Save
                 </Button>
               </WithPermissionControlTooltip>
-            </HorizontalGroup>
-          </HorizontalGroup>
+            </Stack>
+          </Stack>
         </div>
       }
       onClose={onHide}
       closeOnMaskClick={false}
       width={'95%'}
     >
-      <div className={cx('container-wrapper')}>
-        <div className={cx('container')}>
+      <div className={styles.containerWrapper}>
+        <div className={styles.container}>
           <TemplatesAlertGroupsList
-            templatePage={TEMPLATE_PAGE.Integrations}
+            templatePage={TemplatePage.Integrations}
             alertReceiveChannelId={id}
             onEditPayload={onEditPayload}
             onSelectAlertGroup={onSelectAlertGroup}
@@ -228,17 +227,17 @@ export const IntegrationTemplate = observer((props: IntegrationTemplateProps) =>
 
     return (
       <>
-        <div className={cx('template-block-codeeditor')}>
-          <div className={cx('template-editor-block-title')}>
-            <HorizontalGroup justify="space-between" align="center" wrap>
+        <div className={styles.templateBlockCodeEditor}>
+          <div className={styles.templateEditorBlockTitle}>
+            <Stack justifyContent="space-between" alignItems="center" wrap="wrap">
               <Text>Template editor</Text>
 
               <Button variant="secondary" fill="outline" onClick={onShowCheatSheet} icon="book" size="sm">
                 Cheatsheet
               </Button>
-            </HorizontalGroup>
+            </Stack>
           </div>
-          <div className={cx('template-editor-block-content')}>
+          <div className={styles.templateEditorBlockContent}>
             <MonacoEditor
               value={changedTemplateBody}
               data={templates}

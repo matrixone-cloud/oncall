@@ -1,11 +1,8 @@
 import axios, { AxiosError } from 'axios';
+import { getOnCallApiPath } from 'helpers/consts';
+import { FaroHelper } from 'helpers/faro';
+import { safeJSONStringify } from 'helpers/string';
 import qs from 'query-string';
-
-import { FaroHelper } from 'utils/faro';
-import { safeJSONStringify } from 'utils/string';
-
-export const API_PROXY_PREFIX = 'api/plugin-proxy/grafana-oncall-app';
-export const API_PATH_PREFIX = '/api/internal/v1';
 
 const instance = axios.create();
 
@@ -39,10 +36,10 @@ interface RequestConfig {
 
 export const isNetworkError = axios.isAxiosError;
 
-export const makeRequestRaw = async (path: string, config: RequestConfig) => {
+export const makeRequestRaw = async (path: string, config: RequestConfig = {}) => {
   const { method = 'GET', params, data, validateStatus, headers } = config;
 
-  const url = `${API_PROXY_PREFIX}${API_PATH_PREFIX}${path}`;
+  const url = getOnCallApiPath(path);
 
   try {
     FaroHelper.pushNetworkRequestEvent({ method, url, body: `${safeJSONStringify(data)}` });
@@ -65,7 +62,7 @@ export const makeRequestRaw = async (path: string, config: RequestConfig) => {
   }
 };
 
-export const makeRequest = async <RT = any>(path: string, config: RequestConfig) => {
+export const makeRequest = async <RT = any>(path: string, config: RequestConfig = {}) => {
   try {
     const result = await makeRequestRaw(path, config);
     return result.data as RT;

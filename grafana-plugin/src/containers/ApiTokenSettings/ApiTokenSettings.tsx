@@ -1,7 +1,12 @@
 import React from 'react';
 
-import { Button, HorizontalGroup } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { css } from '@emotion/css';
+import { Button, Stack } from '@grafana/ui';
+import {
+  UserActions,
+  isUserActionAllowed,
+  generateMissingPermissionMessage,
+} from 'helpers/authorization/authorization';
 import { observer } from 'mobx-react';
 import moment from 'moment-timezone';
 
@@ -12,13 +17,8 @@ import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/W
 import { ApiToken } from 'models/api_token/api_token.types';
 import { WithStoreProps } from 'state/types';
 import { withMobXProviderContext } from 'state/withStore';
-import { generateMissingPermissionMessage, isUserActionAllowed, UserActions } from 'utils/authorization/authorization';
 
 import { ApiTokenForm } from './ApiTokenForm';
-
-import styles from './ApiTokenSettings.module.css';
-
-const cx = cn.bind(styles);
 
 const MAX_TOKENS_PER_USER = 5;
 const REQUIRED_PERMISSION_TO_VIEW = UserActions.APIKeysWrite;
@@ -77,14 +77,16 @@ class _ApiTokenSettings extends React.Component<ApiTokensProps, any> {
       emptyText = 'No tokens found';
     }
 
+    const styles = getStyles();
+
     return (
       <>
         <GTable
           title={() => (
-            <div className={cx('header')}>
-              <HorizontalGroup align="flex-end">
+            <div className={styles.header}>
+              <Stack alignItems="flex-end">
                 <Text.Title level={3}>API Tokens</Text.Title>
-              </HorizontalGroup>
+              </Stack>
               <WithPermissionControlTooltip userAction={UserActions.APIKeysWrite}>
                 <Button
                   icon="plus"
@@ -156,5 +158,15 @@ class _ApiTokenSettings extends React.Component<ApiTokensProps, any> {
     apiTokenStore.updateItems();
   };
 }
+
+const getStyles = () => {
+  return {
+    header: css`
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    `,
+  };
+};
 
 export const ApiTokenSettings = withMobXProviderContext(_ApiTokenSettings);

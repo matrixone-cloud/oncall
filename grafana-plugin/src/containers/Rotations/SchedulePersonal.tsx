@@ -1,11 +1,13 @@
 import React, { FC, useEffect } from 'react';
 
-import { cx } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { Badge, BadgeColor, Button, HorizontalGroup, Icon, useStyles2, withTheme2 } from '@grafana/ui';
+import { Badge, BadgeColor, Button, Icon, Stack, useStyles2, withTheme2 } from '@grafana/ui';
 import dayjs from 'dayjs';
+import { PLUGIN_ROOT, StackSize } from 'helpers/consts';
+import { useIsLoading } from 'helpers/hooks';
 import { observer } from 'mobx-react';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
 import { Avatar } from 'components/Avatar/Avatar';
@@ -24,22 +26,23 @@ import { Event, ScheduleView } from 'models/schedule/schedule.types';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { getCurrentTimeX, getStartOfWeekBasedOnCurrentDate } from 'pages/schedule/Schedule.helpers';
 import { useStore } from 'state/useStore';
-import { PLUGIN_ROOT } from 'utils/consts';
-import { useIsLoading } from 'utils/hooks';
 
+import { getAnimationClasses } from './Animations.styles';
 import { DEFAULT_TRANSITION_TIMEOUT } from './Rotations.config';
 import { getRotationsStyles } from './Rotations.styles';
 
-import animationStyles from './Rotations.module.css';
+const animationStyles = getAnimationClasses();
 
-interface SchedulePersonalProps extends RouteComponentProps {
+interface SchedulePersonalProps {
   userPk: ApiSchemas['User']['pk'];
   onSlotClick?: (event: Event) => void;
   theme: GrafanaTheme2;
 }
 
-const _SchedulePersonal: FC<SchedulePersonalProps> = observer(({ userPk, onSlotClick, history }) => {
+const _SchedulePersonal: FC<SchedulePersonalProps> = observer(({ userPk, onSlotClick }) => {
   const store = useStore();
+  const navigate = useNavigate();
+
   const { timezoneStore, scheduleStore, userStore } = store;
   const updatePersonalEventsLoading = useIsLoading(ActionKey.UPDATE_PERSONAL_EVENTS);
 
@@ -77,7 +80,7 @@ const _SchedulePersonal: FC<SchedulePersonalProps> = observer(({ userPk, onSlotC
   };
 
   const openSchedule = (event: Event) => {
-    history.push(`${PLUGIN_ROOT}/schedules/${event.schedule?.id}`);
+    navigate(`${PLUGIN_ROOT}/schedules/${event.schedule?.id}`);
   };
 
   const currentTimeX = getCurrentTimeX(
@@ -103,8 +106,8 @@ const _SchedulePersonal: FC<SchedulePersonalProps> = observer(({ userPk, onSlotC
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <HorizontalGroup justify="space-between">
-          <HorizontalGroup>
+        <Stack justifyContent="space-between">
+          <Stack>
             <RenderConditionally
               shouldRender={Boolean(storeUser)}
               render={() => (
@@ -118,9 +121,9 @@ const _SchedulePersonal: FC<SchedulePersonalProps> = observer(({ userPk, onSlotC
             ) : (
               <Badge text="Not on-call now" color={'gray' as BadgeColor} />
             )}
-          </HorizontalGroup>
-          <HorizontalGroup>
-            <HorizontalGroup>
+          </Stack>
+          <Stack>
+            <Stack>
               <Text type="secondary">
                 {timezoneStore.calendarStartDate.format('DD MMM')} -{' '}
                 {timezoneStore.calendarStartDate.add(6, 'day').format('DD MMM')}
@@ -128,19 +131,23 @@ const _SchedulePersonal: FC<SchedulePersonalProps> = observer(({ userPk, onSlotC
               <Button variant="secondary" size="sm" onClick={handleTodayClick}>
                 Today
               </Button>
-              <HorizontalGroup spacing="xs">
+              <Stack gap={StackSize.xs}>
                 <Button variant="secondary" size="sm" onClick={handleLeftClick}>
                   <Icon name="angle-left" />
                 </Button>
                 <Button variant="secondary" size="sm" onClick={handleRightClick}>
                   <Icon name="angle-right" />
                 </Button>
-              </HorizontalGroup>
-            </HorizontalGroup>
-          </HorizontalGroup>
-        </HorizontalGroup>
+              </Stack>
+            </Stack>
+          </Stack>
+        </Stack>
       </div>
-      <div className={'u-position-relative'}>
+      <div
+        className={css`
+          position: relative;
+        `}
+      >
         {!currentTimeHidden && <div className={styles.currentTime} style={{ left: `${currentTimeX * 100}%` }} />}
         <TimelineMarks scheduleView={ScheduleView.OneWeek} />
         <TransitionGroup className={cx(styles.layer, styles.layerFirst)}>
@@ -172,4 +179,4 @@ const _SchedulePersonal: FC<SchedulePersonalProps> = observer(({ userPk, onSlotC
   );
 });
 
-export const SchedulePersonal = withRouter(withTheme2(_SchedulePersonal));
+export const SchedulePersonal = withTheme2(_SchedulePersonal);

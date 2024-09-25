@@ -1,12 +1,20 @@
 import React from 'react';
 
-import { cx } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { Alert, Button, HorizontalGroup, VerticalGroup, withTheme2 } from '@grafana/ui';
+import { Alert, Button, Stack, Themeable2, withTheme2 } from '@grafana/ui';
+import { LocationHelper } from 'helpers/LocationHelper';
+import {
+  UserActions,
+  generateMissingPermissionMessage,
+  isUserActionAllowed,
+} from 'helpers/authorization/authorization';
+import { PAGE, PLUGIN_ROOT, StackSize } from 'helpers/consts';
+import { PropsWithRouter, withRouter } from 'helpers/hoc';
 import { debounce } from 'lodash-es';
 import { observer } from 'mobx-react';
 import { LegacyNavHeading } from 'navbar/LegacyNavHeading';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
+import { Colors } from 'styles/utils.styles';
 
 import { Avatar } from 'components/Avatar/Avatar';
 import { GTable } from 'components/GTable/GTable';
@@ -18,7 +26,7 @@ import {
 import { PluginLink } from 'components/PluginLink/PluginLink';
 import { Text } from 'components/Text/Text';
 import { TooltipBadge } from 'components/TooltipBadge/TooltipBadge';
-import { UsersFilters } from 'components/UsersFilters/UsersFilters';
+import { RemoteFilters } from 'containers/RemoteFilters/RemoteFilters';
 import { UserSettings } from 'containers/UserSettings/UserSettings';
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
 import { UserHelper } from 'models/user/user.helpers';
@@ -26,27 +34,24 @@ import { ApiSchemas } from 'network/oncall-api/api.types';
 import { AppFeature } from 'state/features';
 import { PageProps, WithStoreProps } from 'state/types';
 import { withMobXProviderContext } from 'state/withStore';
-import { LocationHelper } from 'utils/LocationHelper';
-import { UserActions, generateMissingPermissionMessage, isUserActionAllowed } from 'utils/authorization/authorization';
-import { PAGE, PLUGIN_ROOT } from 'utils/consts';
 
-import { getUserRowClassNameFn } from './Users.helpers';
 import { getUsersStyles } from './Users.styles';
 
 const DEBOUNCE_MS = 1000;
 
-interface UsersProps extends WithStoreProps, PageProps, RouteComponentProps<{ id: string }> {
-  theme: GrafanaTheme2;
+interface RouteProps {
+  id: string;
 }
+
+interface UsersProps extends WithStoreProps, PageProps, Themeable2, PropsWithRouter<RouteProps> {}
 
 const REQUIRED_PERMISSION_TO_VIEW_USERS = UserActions.UserSettingsWrite;
 
 interface UsersState extends PageBaseState {
   isWrongTeam: boolean;
   userPkToEdit?: ApiSchemas['User']['pk'] | 'new';
-  usersFilters?: {
-    searchTerm: string;
-  };
+
+  filters: { search: ''; type: undefined; used: undefined; mine: undefined };
 }
 
 @observer
@@ -62,9 +67,7 @@ class Users extends React.Component<UsersProps, UsersState> {
     this.state = {
       isWrongTeam: false,
       userPkToEdit: undefined,
-      usersFilters: {
-        searchTerm: '',
-      },
+      filters: { search: '', type: undefined, used: undefined, mine: undefined },
 
       errorData: initErrorDataState(),
     };
@@ -80,7 +83,7 @@ class Users extends React.Component<UsersProps, UsersState> {
 
   updateUsers = debounce(async (invalidateFn?: () => boolean) => {
     const { store } = this.props;
-    const { usersFilters } = this.state;
+    const { filters } = this.state;
     const { userStore, filtersStore } = store;
     const page = filtersStore.currentTablePageNum[PAGE.Users];
 
@@ -89,13 +92,13 @@ class Users extends React.Component<UsersProps, UsersState> {
     }
 
     LocationHelper.update({ p: page }, 'partial');
-    await userStore.fetchItems(usersFilters, page, invalidateFn);
+    await userStore.fetchItems(filters, page, invalidateFn);
 
     this.forceUpdate();
   }, DEBOUNCE_MS);
 
   componentDidUpdate(prevProps: UsersProps) {
-    if (prevProps.match.params.id !== this.props.match.params.id) {
+    if (prevProps.router.params.id !== this.props.router.params.id) {
       this.parseParams();
     }
   }
@@ -105,7 +108,7 @@ class Users extends React.Component<UsersProps, UsersState> {
 
     const {
       store,
-      match: {
+      router: {
         params: { id },
       },
     } = this.props;
@@ -130,7 +133,7 @@ class Users extends React.Component<UsersProps, UsersState> {
   render() {
     const { userPkToEdit, errorData } = this.state;
     const {
-      match: {
+      router: {
         params: { id },
       },
       theme,
@@ -184,45 +187,27 @@ class Users extends React.Component<UsersProps, UsersState> {
   renderContentIfAuthorized(authorizedToViewUsers: boolean) {
     const {
       store: { userStore, filtersStore },
-      theme,
     } = this.props;
 
-    const { usersFilters, userPkToEdit } = this.state;
+    const { userPkToEdit } = this.state;
 
     const page = filtersStore.currentTablePageNum[PAGE.Users];
 
     const { count, results, page_size } = UserHelper.getSearchResult(userStore);
     const columns = this.getTableColumns();
 
-    const handleClear = () =>
-      this.setState({ usersFilters: { searchTerm: '' } }, () => {
-        this.updateUsers();
-      });
-    const styles = getUsersStyles(theme);
-
     return (
       <>
         {authorizedToViewUsers ? (
           <>
-            <div className={styles.userFiltersContainer} data-testid="users-filters">
-              <UsersFilters
-                className={styles.usersFilters}
-                value={usersFilters}
-                isLoading={results === undefined}
-                onChange={this.handleUsersFiltersChange}
-              />
-              <Button variant="secondary" icon="times" onClick={handleClear}>
-                Clear filters
-              </Button>
-            </div>
-
+            {this.renderFilters()}
             <GTable
               data-testid="users-table"
               emptyText={results ? 'No users found' : 'Loading...'}
               rowKey="pk"
               data={results}
               columns={columns}
-              rowClassName={getUserRowClassNameFn(userPkToEdit, userStore.currentUserPk)}
+              rowClassName={this.getUserRowClassNameFn(userPkToEdit, userStore.currentUserPk)}
               pagination={{
                 page,
                 total: results ? Math.ceil((count || 0) / page_size) : 0,
@@ -250,6 +235,45 @@ class Users extends React.Component<UsersProps, UsersState> {
     );
   }
 
+  renderFilters() {
+    const { query, store, theme } = this.props;
+    const styles = getUsersStyles(theme);
+
+    return (
+      <div className={styles.filters}>
+        <RemoteFilters
+          query={query}
+          page={PAGE.Users}
+          grafanaTeamStore={store.grafanaTeamStore}
+          onChange={this.handleFiltersChange}
+        />
+      </div>
+    );
+  }
+
+  getUserRowClassNameFn = (userPkToEdit?: ApiSchemas['User']['pk'], currentUserPk?: ApiSchemas['User']['pk']) => {
+    const styles = getStyles(this.props.theme);
+
+    return (user: ApiSchemas['User']) => {
+      if (user.pk === currentUserPk || user.pk === userPkToEdit) {
+        return styles.highlightedRow;
+      }
+
+      return '';
+    };
+  };
+
+  handleFiltersChange = (filters: UsersState['filters'], _isOnMount: boolean) => {
+    const { filtersStore } = this.props.store;
+    const currentTablePage = filtersStore.currentTablePageNum[PAGE.Users];
+
+    LocationHelper.update({ p: currentTablePage }, 'partial');
+
+    this.setState({ filters }, () => {
+      this.updateUsers();
+    });
+  };
+
   renderTitle = (user: ApiSchemas['User']) => {
     const {
       store: { userStore },
@@ -259,7 +283,7 @@ class Users extends React.Component<UsersProps, UsersState> {
     const styles = getUsersStyles(theme);
 
     return (
-      <HorizontalGroup>
+      <Stack>
         <Avatar className={styles.userAvatar} size="large" src={user.avatar} />
         <div
           className={cx({
@@ -276,7 +300,7 @@ class Users extends React.Component<UsersProps, UsersState> {
             {user.verified_phone_number}
           </Text>
         </div>
-      </HorizontalGroup>
+      </Stack>
     );
   };
 
@@ -288,18 +312,6 @@ class Users extends React.Component<UsersProps, UsersState> {
     return user.notification_chain_verbal.important;
   };
 
-  renderContacts = (user: ApiSchemas['User']) => {
-    const { store } = this.props;
-    return (
-      <div>
-        <div>Slack: {user.slack_user_identity?.name || '-'}</div>
-        {store.hasFeature(AppFeature.Telegram) && (
-          <div>Telegram: {user.telegram_configuration?.telegram_nick_name || '-'}</div>
-        )}
-      </div>
-    );
-  };
-
   renderButtons = (user: ApiSchemas['User']) => {
     const { store } = this.props;
     const { userStore } = store;
@@ -308,7 +320,7 @@ class Users extends React.Component<UsersProps, UsersState> {
     const action = isCurrent ? UserActions.UserSettingsWrite : UserActions.UserSettingsAdmin;
 
     return (
-      <VerticalGroup justify="center">
+      <Stack direction="column" justifyContent="center">
         <PluginLink query={{ page: 'users', id: user.pk }} disabled={!isUserActionAllowed(action)}>
           <WithPermissionControlTooltip userAction={action}>
             <Button
@@ -322,7 +334,7 @@ class Users extends React.Component<UsersProps, UsersState> {
             </Button>
           </WithPermissionControlTooltip>
         </PluginLink>
-      </VerticalGroup>
+      </Stack>
     );
   };
 
@@ -340,11 +352,11 @@ class Users extends React.Component<UsersProps, UsersState> {
 
     // Show warnining if no notifications are set
     if (!this.renderNotificationsChain(user)) {
-      warnings.push('No Default Notifications');
+      warnings.push('No default notification rules');
     }
 
     if (!this.renderImportantNotificationsChain(user)) {
-      warnings.push('No Important Notifications');
+      warnings.push('No important notification rules');
     }
 
     let phone_verified = user.verified_phone_number !== null;
@@ -379,23 +391,23 @@ class Users extends React.Component<UsersProps, UsersState> {
 
     return (
       warnings.length > 0 && (
-        <HorizontalGroup>
+        <Stack>
           <TooltipBadge
             borderType="warning"
             icon="exclamation-triangle"
             text={warnings.length}
             tooltipTitle="Warnings"
             tooltipContent={
-              <VerticalGroup spacing="none">
+              <Stack direction="column" gap={StackSize.none}>
                 {warnings.map((warning, index) => (
                   <Text type="primary" key={index}>
                     {warning}
                   </Text>
                 ))}
-              </VerticalGroup>
+              </Stack>
             }
           />
-        </HorizontalGroup>
+        </Stack>
       )
     );
   };
@@ -416,13 +428,13 @@ class Users extends React.Component<UsersProps, UsersState> {
       },
       {
         width: '20%',
-        title: 'Default Notifications',
+        title: 'Default notification rules',
         key: 'notifications-chain',
         render: this.renderNotificationsChain,
       },
       {
         width: '20%',
-        title: 'Important Notifications',
+        title: 'Important notification rules',
         key: 'important-notifications-chain',
         render: this.renderImportantNotificationsChain,
       },
@@ -442,22 +454,24 @@ class Users extends React.Component<UsersProps, UsersState> {
     this.updateUsers();
   };
 
-  handleUsersFiltersChange = (usersFilters: any, invalidateFn: () => boolean) => {
-    const { filtersStore } = this.props.store;
-
-    filtersStore.currentTablePageNum[PAGE.Users] = 1;
-
-    this.setState({ usersFilters }, () => {
-      this.updateUsers(invalidateFn);
-    });
-  };
-
   handleHideUserSettings = () => {
-    const { history } = this.props;
+    const {
+      router: { navigate },
+    } = this.props;
     this.setState({ userPkToEdit: undefined });
 
-    history.push(`${PLUGIN_ROOT}/users`);
+    navigate(`${PLUGIN_ROOT}/users`);
   };
 }
 
-export const UsersPage = withRouter(withMobXProviderContext(withTheme2(Users)));
+const getStyles = (theme: GrafanaTheme2) => {
+  return {
+    highlightedRow: css`
+      background: ${theme.isLight ? Colors.GRAY_9 : Colors.CYAN_1};
+    `,
+  };
+};
+
+export const UsersPage = withRouter<RouteProps, Omit<UsersProps, 'store' | 'meta' | 'theme'>>(
+  withMobXProviderContext(withTheme2(Users))
+);

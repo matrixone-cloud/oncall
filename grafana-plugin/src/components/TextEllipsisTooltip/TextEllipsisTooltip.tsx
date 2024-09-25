@@ -1,19 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { ReactElement, useEffect, useRef, useState } from 'react';
 
+import { cx } from '@emotion/css';
 import { Tooltip } from '@grafana/ui';
-import cn from 'classnames/bind';
-
-import styles from 'assets/style/utils.css';
-import { TEXT_ELLIPSIS_CLASS } from 'utils/consts';
-
-const cx = cn.bind(styles);
+import { TEXT_ELLIPSIS_CLASS } from 'helpers/consts';
 
 interface TextEllipsisTooltipProps {
   content?: string;
   queryClassName?: string;
   placement?: string;
   className?: string;
-  children: JSX.Element | JSX.Element[];
+  children: ReactElement | ReactElement[];
 }
 
 export const TextEllipsisTooltip: React.FC<TextEllipsisTooltipProps> = ({
@@ -23,7 +19,7 @@ export const TextEllipsisTooltip: React.FC<TextEllipsisTooltipProps> = ({
   placement,
   children,
 }) => {
-  const [isEllipsis, setIsEllipsis] = useState(true);
+  const [isEllipsis, setIsEllipsis] = useState(false);
   const elContentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

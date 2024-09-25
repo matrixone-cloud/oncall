@@ -1,7 +1,10 @@
 import React, { useCallback, useState, useEffect } from 'react';
 
-import { Button, Modal, Icon, HorizontalGroup, VerticalGroup, Field, Input } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { css } from '@emotion/css';
+import { Button, Modal, Icon, Stack, Field, Input, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { StackSize } from 'helpers/consts';
+import { openNotification } from 'helpers/helpers';
 import { observer } from 'mobx-react';
 import CopyToClipboard from 'react-copy-to-clipboard';
 
@@ -9,12 +12,6 @@ import { Block } from 'components/GBlock/Block';
 import { Text } from 'components/Text/Text';
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { openNotification } from 'utils/utils';
-
-import styles from './TelegramIntegrationButton.module.css';
-
-const cx = cn.bind(styles);
 
 interface TelegramIntegrationProps {
   disabled?: boolean;
@@ -74,14 +71,16 @@ const TelegramModal = (props: TelegramModalProps) => {
     })();
   }, []);
 
+  const styles = useStyles2(getStyles);
+
   return (
     <Modal title="Adding Telegram Channel" closeOnEscape isOpen onDismiss={onUpdate}>
-      <VerticalGroup spacing="md">
-        <Block withBackground bordered className={cx('telegram-block')}>
+      <Stack direction="column" gap={StackSize.md}>
+        <Block withBackground bordered className={styles.telegramBlock}>
           <Text type="secondary">
             If you already have a private channel to work with OnCall, use the following activation code:
           </Text>
-          <Field className={cx('field-command')}>
+          <Field className={styles.fieldCommand}>
             <Input
               id="telegramVerificationCode"
               value={verificationCode}
@@ -122,7 +121,7 @@ const TelegramModal = (props: TelegramModalProps) => {
         <Text type="secondary">5. Add the bot to the discussion group.</Text>
         <Text type="secondary">
           6. Send this verification code to the channel and wait for the confirmation message:
-          <Field className={cx('field-command')}>
+          <Field className={styles.fieldCommand}>
             <Input
               id="telegramVerificationCode"
               value={verificationCode}
@@ -140,15 +139,33 @@ const TelegramModal = (props: TelegramModalProps) => {
           </Field>
         </Text>
         <Text type="secondary">7. Start to manage alerts in your team Telegram workspace.</Text>
-        <HorizontalGroup justify="flex-end">
+        <Stack justifyContent="flex-end">
           <Button variant="secondary" onClick={onHide}>
             Cancel
           </Button>
           <Button variant="primary" onClick={onUpdate}>
             Done
           </Button>
-        </HorizontalGroup>
-      </VerticalGroup>
+        </Stack>
+      </Stack>
     </Modal>
   );
+};
+
+const getStyles = () => {
+  return {
+    verificationCode: css`
+      text-decoration: underline;
+    `,
+
+    telegramBlock: css`
+      width: 100%;
+    `,
+
+    fieldCommand: css`
+      margin-top: 8px;
+      width: 100%;
+      display: inline-block;
+    `,
+  };
 };

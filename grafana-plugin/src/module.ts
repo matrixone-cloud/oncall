@@ -1,14 +1,14 @@
 import { ComponentClass } from 'react';
 
 import { AppPlugin, PluginExtensionPoints } from '@grafana/data';
+import { IRM_TAB } from 'helpers/consts';
+import { isCurrentGrafanaVersionEqualOrGreaterThan } from 'helpers/helpers';
 
 import { MobileAppConnectionWrapper } from 'containers/MobileAppConnection/MobileAppConnection';
 import { PluginConfigPage } from 'containers/PluginConfigPage/PluginConfigPage';
 import { GrafanaPluginRootPage } from 'plugin/GrafanaPluginRootPage';
-import { getGrafanaVersion } from 'plugin/GrafanaPluginRootPage.helpers';
-import { IRM_TAB } from 'utils/consts';
 
-import { OnCallPluginConfigPageProps, OnCallPluginMetaJSONData } from './types';
+import { OnCallPluginConfigPageProps, OnCallPluginMetaJSONData } from './app-types';
 
 const plugin = new AppPlugin<OnCallPluginMetaJSONData>().setRootPage(GrafanaPluginRootPage).addConfigPage({
   title: 'Configuration',
@@ -20,24 +20,29 @@ const plugin = new AppPlugin<OnCallPluginMetaJSONData>().setRootPage(GrafanaPlug
 if (isUseProfileExtensionPointEnabled()) {
   const extensionPointId = PluginExtensionPoints.UserProfileTab;
 
-  plugin.configureExtensionComponent({
-    title: IRM_TAB,
-    description: 'IRM settings',
-    extensionPointId,
-    /**
-     * typing MobileAppConnectionWrapper as any until 10.2.0 is released
-     * https://github.com/grafana/grafana/pull/75019#issuecomment-1724997540
-     */
-    component: MobileAppConnectionWrapper,
-  });
+  if (plugin.addComponent) {
+    // v11
+    plugin.addComponent({
+      title: IRM_TAB,
+      description: 'IRM settings',
+      component: MobileAppConnectionWrapper,
+      targets: [extensionPointId],
+    });
+  } else {
+    // v10
+    // eslint-disable-next-line
+    plugin.configureExtensionComponent({
+      component: MobileAppConnectionWrapper,
+      title: IRM_TAB,
+      description: 'IRM settings',
+      extensionPointId: extensionPointId,
+    });
+  }
 }
 
 function isUseProfileExtensionPointEnabled(): boolean {
-  const { major, minor } = getGrafanaVersion();
-  const isRequiredGrafanaVersion = major > 10 || (major === 10 && minor >= 3); // >= 10.3.0
-
   return (
-    isRequiredGrafanaVersion &&
+    isCurrentGrafanaVersionEqualOrGreaterThan({ minMajor: 10, minMinor: 3 }) &&
     'configureExtensionComponent' in plugin &&
     PluginExtensionPoints != null &&
     'UserProfileTab' in PluginExtensionPoints

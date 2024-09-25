@@ -11,8 +11,8 @@ Related: [How to develop integrations](/engine/config_integrations/README.md)
 - [Tilt | Kubernetes for Prod, Tilt for Dev](https://tilt.dev/)
 - [tilt-dev/ctlptl: Making local Kubernetes clusters fun and easy to set up](https://github.com/tilt-dev/ctlptl)
 - [Kind](https://kind.sigs.k8s.io)
-- [Node.js v18.x](https://nodejs.org/en/download)
-- [Yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable)
+- [Node.js v20.x](https://nodejs.org/en/download)
+- [pnpm](https://pnpm.io/installation)
 
 ### Launch the environment
 
@@ -35,6 +35,14 @@ Related: [How to develop integrations](/engine/config_integrations/README.md)
      - name: FEATURE_LABELS_ENABLED_FOR_ALL
        value: "True"
    ```
+
+   You can also choose set of resources that will be installed in your local cluster, e.g.:
+
+   ```bash
+   ONCALL_PROFILES=grafana,plugin,backend tilt up
+   ```
+
+   Available profiles are: `grafana,plugin,backend,tests`, by default all the profiles are enabled.
 
 3. Wait until all resources are green and open <http://localhost:3000/a/grafana-oncall-app> (user: oncall, password: oncall)
 
@@ -511,7 +519,7 @@ In order to automate types creation and prevent API usage pitfalls, OnCall proje
 
 ### Instruction
 
-1. Whenever API contract changes, run `yarn generate-types` from `grafana-plugin` directory
+1. Whenever API contract changes, run `pnpm generate-types` from `grafana-plugin` directory
 2. Then you can start consuming types and you can use fully typed http client:
 
    ```ts

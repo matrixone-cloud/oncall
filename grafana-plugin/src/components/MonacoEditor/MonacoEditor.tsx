@@ -1,9 +1,8 @@
 import React, { ComponentProps, FC, useCallback } from 'react';
 
+import { css, cx } from '@emotion/css';
 import { CodeEditor, CodeEditorSuggestionItemKind, LoadingPlaceholder } from '@grafana/ui';
-import cn from 'classnames';
-
-import { getPaths } from 'utils/utils';
+import { getPaths } from 'helpers/helpers';
 
 import { conf, language as jinja2Language } from './jinja2';
 
@@ -17,7 +16,7 @@ interface MonacoEditorProps {
   data: any;
   showLineNumbers?: boolean;
   useAutoCompleteList?: boolean;
-  language?: MONACO_LANGUAGE;
+  language?: MonacoLanguage;
   onChange?: (value: string) => void;
   loading?: boolean;
   monacoOptions?: any;
@@ -26,7 +25,7 @@ interface MonacoEditorProps {
   codeEditorProps?: Partial<ComponentProps<typeof CodeEditor>>;
 }
 
-export enum MONACO_LANGUAGE {
+export enum MonacoLanguage {
   json = 'json',
   jinja2 = 'jinja2',
 }
@@ -46,7 +45,7 @@ export const MonacoEditor: FC<MonacoEditorProps> = (props) => {
     onChange,
     disabled,
     data,
-    language = MONACO_LANGUAGE.jinja2,
+    language = MonacoLanguage.jinja2,
     useAutoCompleteList = true,
     focus = true,
     height = '130px',
@@ -79,7 +78,7 @@ export const MonacoEditor: FC<MonacoEditorProps> = (props) => {
       editor.focus();
     }
 
-    if (language === MONACO_LANGUAGE.jinja2) {
+    if (language === MonacoLanguage.jinja2) {
       const jinja2Lang = monaco.languages.getLanguages().find((l: { id: string }) => l.id === 'jinja2');
       if (!jinja2Lang) {
         monaco.languages.register({ id: 'jinja2' });
@@ -105,7 +104,13 @@ export const MonacoEditor: FC<MonacoEditorProps> = (props) => {
       height={height}
       onEditorDidMount={handleMount}
       getSuggestions={useAutoCompleteList ? autoCompleteList : undefined}
-      containerStyles={cn('u-width-height-100', containerClassName)}
+      containerStyles={cx(
+        css`
+          width: 100%;
+          height: 100%;
+        `,
+        containerClassName
+      )}
       {...codeEditorProps}
     />
   );

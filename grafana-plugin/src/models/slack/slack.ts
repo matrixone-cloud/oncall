@@ -1,11 +1,11 @@
+import { GENERIC_ERROR } from 'helpers/consts';
+import { openErrorNotification } from 'helpers/helpers';
 import { action, observable, makeObservable, runInAction } from 'mobx';
 
 import { BaseStore } from 'models/base_store';
 import { SlackChannel } from 'models/slack_channel/slack_channel.types';
 import { makeRequest, makeRequestRaw } from 'network/network';
 import { RootStore } from 'state/rootStore';
-import { GENERIC_ERROR } from 'utils/consts';
-import { openErrorNotification } from 'utils/utils';
 
 import { SlackSettings } from './slack.types';
 
@@ -82,10 +82,10 @@ export class SlackStore extends BaseStore {
     window.location = url_for_redirect;
   }
 
+  @action.bound
   async installSlackIntegration() {
     try {
       const response = await makeRequestRaw('/login/slack-install-free/', {});
-
       if (response.status === 201) {
         this.rootStore.organizationStore.loadCurrentOrganization();
       } else if (response.status === 200) {

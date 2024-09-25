@@ -1,11 +1,10 @@
 import React, { FC, HTMLAttributes, ChangeEvent, useState, useCallback } from 'react';
 
 import { cx } from '@emotion/css';
-import { IconButton, Modal, Input, HorizontalGroup, Button, VerticalGroup, useStyles2 } from '@grafana/ui';
+import { IconButton, Modal, Input, Stack, Button, useStyles2 } from '@grafana/ui';
+import { openNotification } from 'helpers/helpers';
 import CopyToClipboard from 'react-copy-to-clipboard';
 import { bem } from 'styles/utils.styles';
-
-import { openNotification } from 'utils/utils';
 
 import { getTextStyles } from './Text.styles';
 
@@ -16,6 +15,7 @@ interface TextProps extends HTMLAttributes<HTMLElement> {
   strong?: boolean;
   underline?: boolean;
   size?: 'xs' | 'small' | 'medium' | 'large';
+  display?: 'inline' | 'block' | 'inline-block';
   className?: string;
   wrap?: boolean;
   copyable?: boolean;
@@ -27,18 +27,16 @@ interface TextProps extends HTMLAttributes<HTMLElement> {
   maxWidth?: string;
   clickable?: boolean;
   customTag?: 'h6' | 'span';
-}
-
-interface TextInterface extends React.FC<TextProps> {
-  Title: React.FC<TitleProps>;
+  withBackground?: boolean;
 }
 
 const PLACEHOLDER = '**********';
 
-export const Text: TextInterface = (props) => {
+export const Text: React.FC<TextProps> & { Title: typeof Title } = (props) => {
   const {
     type,
     size = 'medium',
+    display = 'inline',
     strong = false,
     underline = false,
     children,
@@ -51,6 +49,7 @@ export const Text: TextInterface = (props) => {
     clearBeforeEdit = false,
     hidden = false,
     editModalTitle = 'New value',
+    withBackground = false,
     style,
     maxWidth,
     clickable,
@@ -91,12 +90,14 @@ export const Text: TextInterface = (props) => {
         styles.root,
         styles.text,
         { [styles.maxWidth]: Boolean(maxWidth) },
-        { [bem(styles.text, type)]: true },
-        { [bem(styles.text, size)]: true },
+        bem(styles.text, type),
+        bem(styles.text, size),
+        bem(styles.display, display),
         { [bem(styles.text, `strong`)]: strong },
         { [bem(styles.text, `underline`)]: underline },
         { [bem(styles.text, 'clickable')]: clickable },
         { [styles.noWrap]: !wrap },
+        { [styles.withBackground]: withBackground },
         className
       )}
       style={{ ...style, maxWidth }}
@@ -132,7 +133,7 @@ export const Text: TextInterface = (props) => {
       )}
       {isEditMode && (
         <Modal onDismiss={handleCancelEdit} closeOnEscape isOpen title={editModalTitle}>
-          <VerticalGroup>
+          <Stack direction="column">
             <Input
               autoFocus
               ref={(node) => {
@@ -143,15 +144,15 @@ export const Text: TextInterface = (props) => {
               value={value}
               onChange={handleInputChange}
             />
-            <HorizontalGroup justify="flex-end">
+            <Stack justifyContent="flex-end">
               <Button variant="secondary" onClick={handleCancelEdit}>
                 Cancel
               </Button>
               <Button variant="primary" onClick={handleConfirmEdit}>
                 Ok
               </Button>
-            </HorizontalGroup>
-          </VerticalGroup>
+            </Stack>
+          </Stack>
         </Modal>
       )}
     </CustomTag>

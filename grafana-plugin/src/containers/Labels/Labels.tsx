@@ -1,15 +1,16 @@
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 
+import { css } from '@emotion/css';
 import { ServiceLabelsProps, ServiceLabels } from '@grafana/labels';
 import { Field, Label } from '@grafana/ui';
+import { GENERIC_ERROR } from 'helpers/consts';
+import { openErrorNotification } from 'helpers/helpers';
 import { isEmpty } from 'lodash-es';
 import { observer } from 'mobx-react';
 
 import { splitToGroups } from 'models/label/label.helpers';
 import { LabelKeyValue } from 'models/label/label.types';
 import { useStore } from 'state/useStore';
-import { GENERIC_ERROR } from 'utils/consts';
-import { openErrorNotification } from 'utils/utils';
 
 export interface LabelsProps {
   value: LabelKeyValue[];
@@ -49,30 +50,16 @@ const _Labels = observer(
     );
 
     const onLoadKeys = async (search?: string) => {
-      let result = undefined;
-      try {
-        result = await labelsStore.loadKeys(search);
-      } catch (error) {
-        openErrorNotification('There was an error processing your request. Please try again');
-      }
-
-      const groups = splitToGroups(result);
-
-      return groups;
+      const result = await labelsStore.loadKeys(search);
+      return splitToGroups(result);
     };
 
     const onLoadValuesForKey = async (key: string, search?: string) => {
-      let result = undefined;
-      try {
-        const { values } = await labelsStore.loadValuesForKey(key, search);
-        result = values;
-      } catch (error) {
-        openErrorNotification('There was an error processing your request. Please try again');
+      if (!key) {
+        return [];
       }
-
-      const groups = splitToGroups(result);
-
-      return groups;
+      const { values } = await labelsStore.loadValuesForKey(key, search);
+      return splitToGroups(values);
     };
 
     const isValid = () => {
@@ -102,7 +89,23 @@ const _Labels = observer(
 
     return (
       <div>
-        <Field label={<Label description={<div className="u-padding-vertical-xs">{description}</div>}>Labels</Label>}>
+        <Field
+          label={
+            <Label
+              description={
+                <div
+                  className={css`
+                    padding: 4px 0;
+                  `}
+                >
+                  {description}
+                </div>
+              }
+            >
+              Labels
+            </Label>
+          }
+        >
           <ServiceLabels
             loadById
             value={value}

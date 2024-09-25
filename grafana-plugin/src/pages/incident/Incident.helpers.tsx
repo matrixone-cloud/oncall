@@ -1,7 +1,9 @@
 import React from 'react';
 
 import { css, cx } from '@emotion/css';
-import { Button, HorizontalGroup, IconButton, Tooltip, VerticalGroup, useStyles2 } from '@grafana/ui';
+import { Button, IconButton, Tooltip, Stack, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { StackSize } from 'helpers/consts';
 import { getUtilStyles } from 'styles/utils.styles';
 
 import { Avatar } from 'components/Avatar/Avatar';
@@ -11,9 +13,8 @@ import { TextEllipsisTooltip } from 'components/TextEllipsisTooltip/TextEllipsis
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
 import { IncidentStatus } from 'models/alertgroup/alertgroup.types';
 import { ApiSchemas } from 'network/oncall-api/api.types';
-import { SilenceButtonCascader } from 'pages/incidents/parts/SilenceButtonCascader';
+import { SilenceSelect } from 'pages/incidents/parts/SilenceSelect';
 import { move } from 'state/helpers';
-import { UserActions } from 'utils/authorization/authorization';
 
 export const IncidentRelatedUsers = (props: { incident: ApiSchemas['AlertGroup']; isFull: boolean }) => {
   const { incident, isFull } = props;
@@ -42,7 +43,7 @@ export const IncidentRelatedUsers = (props: { incident: ApiSchemas['AlertGroup']
         <TextEllipsisTooltip placement="top" content={user.username}>
           <Text type="secondary" className={utilStyles.overflowChild}>
             <Avatar size="small" src={user.avatar} />{' '}
-            <span className={cx(utilStyles.wordBreakAll, 'u-margin-right-xs')}>{user.username}</span>
+            <span className={cx(utilStyles.wordBreakAll, utilStyles.flexGapXS)}>{user.username}</span>
             <span className={styles.userBadge}>{badge}</span>
           </Text>
         </TextEllipsisTooltip>
@@ -81,7 +82,7 @@ export const IncidentRelatedUsers = (props: { incident: ApiSchemas['AlertGroup']
   }
 
   return (
-    <VerticalGroup spacing="xs">
+    <Stack direction="column" gap={StackSize.xs}>
       {visibleUsers.map(renderUser)}
       {Boolean(otherUsers.length) && (
         <Tooltip
@@ -104,7 +105,7 @@ export const IncidentRelatedUsers = (props: { incident: ApiSchemas['AlertGroup']
           </span>
         </Tooltip>
       )}
-    </VerticalGroup>
+    </Stack>
   );
 };
 
@@ -153,7 +154,7 @@ export function getActionButtons(
 
   const silenceButton = (
     <WithPermissionControlTooltip key="silence" userAction={UserActions.AlertGroupsWrite}>
-      <SilenceButtonCascader disabled={incident?.loading} onSelect={onSilence} />
+      <SilenceSelect disabled={incident?.loading} onSelect={onSilence} />
     </WithPermissionControlTooltip>
   );
 
@@ -186,7 +187,7 @@ export function getActionButtons(
     buttons.push(unresolveButton);
   }
 
-  return <HorizontalGroup justify="flex-end">{buttons}</HorizontalGroup>;
+  return <Stack justifyContent="flex-end">{buttons}</Stack>;
 }
 
 const getStyles = () => {

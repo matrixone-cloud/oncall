@@ -1,15 +1,16 @@
 import { expect, test } from '../fixtures';
 import { generateRandomValue } from '../utils/forms';
 import { goToOnCallPage } from '../utils/navigation';
-import { createOnCallScheduleWithRotation } from '../utils/schedule';
+import { createOnCallSchedule } from '../utils/schedule';
 
 test('schedule calendar and list of schedules is correctly displayed', async ({ adminRolePage }) => {
   const { page, userName } = adminRolePage;
 
   const onCallScheduleName = generateRandomValue();
-  await createOnCallScheduleWithRotation(page, onCallScheduleName, userName);
+  await createOnCallSchedule(page, onCallScheduleName, userName);
 
   await goToOnCallPage(page, 'schedules');
+  await page.waitForLoadState('networkidle');
 
   // schedule slots are present in calendar
   const nbOfSlotsInCalendar = await page.getByTestId('schedule-slot').count();
@@ -26,9 +27,9 @@ test('schedule calendar and list of schedules is correctly displayed', async ({ 
   await page.waitForTimeout(2000);
 
   // schedules table displays details created schedule
-  const schedulesTable = page.getByTestId('schedules-table');
-  await expect(schedulesTable.getByRole('cell', { name: onCallScheduleName })).toBeVisible();
-  await expect(schedulesTable.getByRole('cell', { name: 'Web' })).toBeVisible();
-  await expect(schedulesTable.getByRole('cell', { name: userName })).toBeVisible();
-  await expect(schedulesTable.getByRole('cell', { name: 'No team' })).toBeVisible();
+  const schedulesTableLastRow = page.getByTestId('schedules-table').getByRole('row').last();
+  await expect(schedulesTableLastRow.getByRole('cell', { name: onCallScheduleName })).toBeVisible();
+  await expect(schedulesTableLastRow.getByRole('cell', { name: 'Web' })).toBeVisible();
+  await expect(schedulesTableLastRow.getByRole('cell', { name: userName })).toBeVisible();
+  await expect(schedulesTableLastRow.getByRole('cell', { name: 'No team' })).toBeVisible();
 });

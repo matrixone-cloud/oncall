@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { ReactElement, useEffect, useState } from 'react';
 
+import { css, cx } from '@emotion/css';
 import { SelectableValue } from '@grafana/data';
-import { Button, Drawer, Field, HorizontalGroup, Icon, Select, VerticalGroup } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { Button, Drawer, Field, Icon, Select, Stack } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { StackSize } from 'helpers/consts';
+import { openNotification } from 'helpers/helpers';
 import { observer } from 'mobx-react';
 
 import { IntegrationInputField } from 'components/IntegrationInputField/IntegrationInputField';
@@ -13,12 +16,6 @@ import { ApiSchemas } from 'network/oncall-api/api.types';
 import { SelectOption } from 'state/types';
 import { useStore } from 'state/useStore';
 import { withMobXProviderContext } from 'state/withStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { openNotification } from 'utils/utils';
-
-import styles from './IntegrationHeartbeatForm.module.scss';
-
-const cx = cn.bind(styles);
 
 interface IntegrationHeartbeatFormProps {
   alertReceveChannelId: ApiSchemas['AlertReceiveChannel']['id'];
@@ -47,15 +44,19 @@ const _IntegrationHeartbeatForm = observer(({ alertReceveChannelId, onClose }: I
   return (
     <Drawer width={'640px'} scrollableContent title={'Heartbeat'} onClose={onClose} closeOnMaskClick={false}>
       <div data-testid="heartbeat-settings-form">
-        <VerticalGroup spacing={'lg'}>
+        <Stack direction="column" gap={StackSize.lg}>
           <Text type="secondary">
             A heartbeat acts as a healthcheck for alert group monitoring. You can configure you monitoring to regularly
             send alerts to the heartbeat endpoint. If OnCall doesn't receive one of these alerts, it will create an new
             alert group and escalate it
           </Text>
 
-          <VerticalGroup spacing="md">
-            <div className={cx('u-width-100')}>
+          <Stack direction="column" gap={StackSize.md}>
+            <div
+              className={css`
+                width: 100%;
+              `}
+            >
               <Field label={'Setup heartbeat interval'}>
                 <WithPermissionControlTooltip userAction={UserActions.IntegrationsWrite}>
                   <Select
@@ -72,7 +73,11 @@ const _IntegrationHeartbeatForm = observer(({ alertReceveChannelId, onClose }: I
                 </WithPermissionControlTooltip>
               </Field>
             </div>
-            <div className={cx('u-width-100')}>
+            <div
+              className={css`
+                width: 100%;
+              `}
+            >
               <Field label="Endpoint" description="Use the following unique Grafana link to send GET and POST requests">
                 <IntegrationInputField value={heartbeat?.link} showEye={false} isMasked={false} />
               </Field>
@@ -83,16 +88,17 @@ const _IntegrationHeartbeatForm = observer(({ alertReceveChannelId, onClose }: I
               rel="noreferrer"
             >
               <Text type="link" size="small">
-                <HorizontalGroup>
+                <Stack>
                   How to configure heartbeats
                   <Icon name="external-link-alt" />
-                </HorizontalGroup>
+                </Stack>
               </Text>
             </a>
-          </VerticalGroup>
+          </Stack>
 
-          <VerticalGroup style={{ marginTop: 'auto' }}>
-            <HorizontalGroup className={cx('buttons')} justify="flex-end">
+          {/* TODO: Check if the styles were appended previously */}
+          <Stack direction="column">
+            <Stack justifyContent="flex-end">
               <Button variant={'secondary'} onClick={onClose} data-testid="close-heartbeat-form">
                 Close
               </Button>
@@ -108,9 +114,9 @@ const _IntegrationHeartbeatForm = observer(({ alertReceveChannelId, onClose }: I
                   </Button>
                 </WithConfirm>
               </WithPermissionControlTooltip>
-            </HorizontalGroup>
-          </VerticalGroup>
-        </VerticalGroup>
+            </Stack>
+          </Stack>
+        </Stack>
       </div>
     </Drawer>
   );
@@ -136,4 +142,4 @@ const _IntegrationHeartbeatForm = observer(({ alertReceveChannelId, onClose }: I
 
 export const IntegrationHeartbeatForm = withMobXProviderContext(_IntegrationHeartbeatForm) as ({
   alertReceveChannelId,
-}: IntegrationHeartbeatFormProps) => JSX.Element;
+}: IntegrationHeartbeatFormProps) => ReactElement;

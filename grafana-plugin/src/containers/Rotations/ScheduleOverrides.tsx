@@ -1,9 +1,11 @@
 import React, { Component } from 'react';
 
-import { cx } from '@emotion/css';
+import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { Button, HorizontalGroup, Tooltip, withTheme2 } from '@grafana/ui';
+import { Button, Stack, Tooltip, withTheme2 } from '@grafana/ui';
 import dayjs from 'dayjs';
+import { HTML_ID } from 'helpers/DOM';
+import { UserActions } from 'helpers/authorization/authorization';
 import { observer } from 'mobx-react';
 import { CSSTransition, TransitionGroup } from 'react-transition-group';
 
@@ -22,24 +24,21 @@ import {
   SHIFT_SWAP_COLOR,
 } from 'models/schedule/schedule.helpers';
 import { Schedule, Shift, ShiftEvents, ShiftSwap } from 'models/schedule/schedule.types';
-import { getCurrentTimeX } from 'pages/schedule/Schedule.helpers';
+import { getCurrentTimeX, toDateWithTimezoneOffset } from 'pages/schedule/Schedule.helpers';
 import { WithStoreProps } from 'state/types';
 import { withMobXProviderContext } from 'state/withStore';
-import { HTML_ID } from 'utils/DOM';
-import { UserActions } from 'utils/authorization/authorization';
 
+import { getAnimationClasses } from './Animations.styles';
 import { DEFAULT_TRANSITION_TIMEOUT } from './Rotations.config';
 import { findColor } from './Rotations.helpers';
 import { getRotationsStyles } from './Rotations.styles';
-
-import animationStyles from './Rotations.module.css';
 
 interface ScheduleOverridesProps extends WithStoreProps {
   shiftStartToShowOverrideForm: dayjs.Dayjs;
   shiftEndToShowOverrideForm: dayjs.Dayjs;
   scheduleId: Schedule['id'];
   shiftIdToShowRotationForm?: Shift['id'] | 'new';
-  onShowRotationForm: (shiftId: Shift['id'] | 'new') => void;
+  onShowOverridesForm: (shiftId: Shift['id'] | 'new') => void;
   onShowShiftSwapForm: (id: ShiftSwap['id'] | 'new') => void;
   onCreate: () => void;
   onUpdate: () => void;
@@ -54,6 +53,8 @@ interface ScheduleOverridesState {
   shiftStartToShowOverrideForm?: dayjs.Dayjs;
   shiftEndToShowOverrideForm?: dayjs.Dayjs;
 }
+
+const animationStyles = getAnimationClasses();
 
 @observer
 class _ScheduleOverrides extends Component<ScheduleOverridesProps, ScheduleOverridesState> {
@@ -102,11 +103,11 @@ class _ScheduleOverrides extends Component<ScheduleOverridesProps, ScheduleOverr
       <>
         <div id={HTML_ID.SCHEDULE_OVERRIDES_AND_SWAPS} className={styles.root}>
           <div className={styles.header}>
-            <HorizontalGroup justify="space-between">
+            <Stack justifyContent="space-between">
               <Text.Title level={5} type="primary">
                 Overrides and swaps
               </Text.Title>
-              <HorizontalGroup>
+              <Stack>
                 <Button
                   variant="secondary"
                   disabled={disableShiftSwaps}
@@ -131,10 +132,14 @@ class _ScheduleOverrides extends Component<ScheduleOverridesProps, ScheduleOverr
                     </Button>
                   </WithPermissionControlTooltip>
                 )}
-              </HorizontalGroup>
-            </HorizontalGroup>
+              </Stack>
+            </Stack>
           </div>
-          <div className="u-position-relative">
+          <div
+            className={css`
+              position: relative;
+            `}
+          >
             {!currentTimeHidden && <div className={styles.currentTime} style={{ left: `${currentTimeX * 100}%` }} />}
             <TimelineMarks />
             {shiftSwaps && shiftSwaps.length ? (
@@ -205,8 +210,14 @@ class _ScheduleOverrides extends Component<ScheduleOverridesProps, ScheduleOverr
             shiftId={shiftIdToShowRotationForm}
             shiftColor={findColor(shiftIdToShowRotationForm, undefined, shifts)}
             scheduleId={scheduleId}
-            shiftStart={propsShiftStartToShowOverrideForm || shiftStartToShowOverrideForm}
-            shiftEnd={propsShiftEndToShowOverrideForm || shiftEndToShowOverrideForm}
+            shiftStart={toDateWithTimezoneOffset(
+              propsShiftStartToShowOverrideForm || shiftStartToShowOverrideForm,
+              store.timezoneStore.selectedTimezoneOffset
+            )}
+            shiftEnd={toDateWithTimezoneOffset(
+              propsShiftEndToShowOverrideForm || shiftEndToShowOverrideForm,
+              store.timezoneStore.selectedTimezoneOffset
+            )}
             onHide={() => {
               this.handleHide();
 
@@ -241,7 +252,7 @@ class _ScheduleOverrides extends Component<ScheduleOverridesProps, ScheduleOverr
     }
 
     this.setState({ shiftStartToShowOverrideForm: shiftStart, shiftEndToShowOverrideForm: shiftEnd }, () => {
-      this.onShowRotationForm(shiftId);
+      this.onShowOverridesForm(shiftId);
     });
   };
 
@@ -256,22 +267,24 @@ class _ScheduleOverrides extends Component<ScheduleOverridesProps, ScheduleOverr
     this.setState(
       { shiftStartToShowOverrideForm: store.timezoneStore.currentDateInSelectedTimezone.startOf('day') },
       () => {
-        this.onShowRotationForm('new');
+        this.onShowOverridesForm('new');
       }
     );
   };
 
   handleHide = () => {
     this.setState({ shiftStartToShowOverrideForm: undefined, shiftEndToShowOverrideForm: undefined }, () => {
-      this.onShowRotationForm(undefined);
+      this.onShowOverridesForm(undefined);
     });
   };
 
-  onShowRotationForm = (shiftId: Shift['id']) => {
-    const { onShowRotationForm } = this.props;
+  onShowOverridesForm = (shiftId: Shift['id']) => {
+    const { onShowOverridesForm } = this.props;
 
-    onShowRotationForm(shiftId);
+    onShowOverridesForm(shiftId);
   };
 }
 
-export const ScheduleOverrides = withMobXProviderContext(withTheme2(_ScheduleOverrides));
+export const ScheduleOverrides = withMobXProviderContext(
+  withTheme2(_ScheduleOverrides)
+) as unknown as React.ComponentClass<Omit<ScheduleOverridesProps, 'store' | 'theme'>>;

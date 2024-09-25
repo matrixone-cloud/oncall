@@ -1,7 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef, FC } from 'react';
 
-import { Alert, HorizontalGroup, Icon, Input, LoadingPlaceholder, RadioButtonGroup } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { css } from '@emotion/css';
+import { Alert, Icon, Input, LoadingPlaceholder, RadioButtonGroup, Stack, useStyles2 } from '@grafana/ui';
+import { StackSize } from 'helpers/consts';
+import { useOnClickOutside, useDebouncedCallback } from 'helpers/hooks';
 import { observer } from 'mobx-react';
 import { ColumnsType } from 'rc-table/lib/interface';
 
@@ -12,9 +14,8 @@ import { GrafanaTeam } from 'models/grafana_team/grafana_team.types';
 import { UserHelper } from 'models/user/user.helpers';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useStore } from 'state/useStore';
-import { useDebouncedCallback, useOnClickOutside } from 'utils/hooks';
 
-import styles from './AddRespondersPopup.module.scss';
+import { getAddRespondersPopupStyles } from './AddRespondersPopup.styles';
 
 type Props = {
   mode: 'create' | 'update';
@@ -26,8 +27,6 @@ type Props = {
 
   existingPagedUsers?: ApiSchemas['AlertGroup']['paged_users'];
 };
-
-const cx = cn.bind(styles);
 
 enum TabOptions {
   Teams = 'teams',
@@ -44,6 +43,7 @@ export const AddRespondersPopup = observer(
     setShowUserConfirmationModal,
   }: Props) => {
     const { directPagingStore, grafanaTeamStore } = useStore();
+    const styles = useStyles2(getAddRespondersPopupStyles);
     const { selectedTeamResponder, selectedUserResponders } = directPagingStore;
 
     const isCreateMode = mode === 'create';
@@ -57,7 +57,7 @@ export const AddRespondersPopup = observer(
     const [notOnCallUserSearchResults, setNotOnCallUserSearchResults] = useState<
       Array<ApiSchemas['UserIsCurrentlyOnCall']>
     >([]);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [search, setSearch] = useState('');
 
     const ref = useRef();
 
@@ -65,11 +65,11 @@ export const AddRespondersPopup = observer(
       setVisible(false);
     });
 
-    const handleSetSearchTerm = useCallback(
+    const handleSetSearch = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value);
+        setSearch(e.target.value);
       },
-      [setSearchTerm]
+      [setSearch]
     );
 
     const onClickUser = useCallback(
@@ -102,7 +102,7 @@ export const AddRespondersPopup = observer(
     const searchForUsers = useCallback(async () => {
       const _search = async (is_currently_oncall: boolean) => {
         const response = await UserHelper.search({
-          searchTerm,
+          search,
           is_currently_oncall,
         });
         return response.results;
@@ -112,14 +112,14 @@ export const AddRespondersPopup = observer(
 
       setOnCallUserSearchResults(onCallUserSearchResults as Array<ApiSchemas['UserIsCurrentlyOnCall']>);
       setNotOnCallUserSearchResults(notOnCallUserSearchResults as Array<ApiSchemas['UserIsCurrentlyOnCall']>);
-    }, [searchTerm]);
+    }, [search]);
 
     const searchForTeams = useCallback(async () => {
-      await grafanaTeamStore.updateItems(searchTerm, false, true, false);
+      await grafanaTeamStore.updateItems(search, false, true, false);
       setTeamSearchResults(grafanaTeamStore.getSearchResult());
-    }, [searchTerm]);
+    }, [search]);
 
-    const handleSearchTermChange = useDebouncedCallback(async () => {
+    const handleSearchChange = useDebouncedCallback(async () => {
       setSearchLoading(true);
 
       if (isCreateMode && activeOption === TabOptions.Teams) {
@@ -137,7 +137,7 @@ export const AddRespondersPopup = observer(
          * there's no need to trigger a new search request when the user changes tabs if they don't have a
          * search term
          */
-        if (searchTerm) {
+        if (search) {
           setSearchLoading(true);
 
           if (activeOption === TabOptions.Teams) {
@@ -151,10 +151,10 @@ export const AddRespondersPopup = observer(
 
         setActiveOption(tab);
       },
-      [searchTerm]
+      [search]
     );
 
-    useEffect(handleSearchTermChange, [searchTerm]);
+    useEffect(handleSearchChange, [search]);
 
     /**
      * in the context where some user(s) have already been paged (ex. on a direct paging generated
@@ -204,18 +204,18 @@ export const AddRespondersPopup = observer(
           const { avatar_url, name, number_of_users_currently_oncall } = team;
 
           return (
-            <div onClick={() => addTeamResponder(team)} className={cx('responder-item')}>
-              <HorizontalGroup justify="space-between">
-                <HorizontalGroup>
+            <div onClick={() => addTeamResponder(team)} className={styles.responderItem}>
+              <Stack justifyContent="space-between">
+                <Stack>
                   <Avatar size="small" src={avatar_url} />
                   <Text>{name}</Text>
-                </HorizontalGroup>
+                </Stack>
                 {number_of_users_currently_oncall > 0 && (
                   <Text type="secondary">
                     {number_of_users_currently_oncall} user{number_of_users_currently_oncall > 1 ? 's' : ''} on-call
                   </Text>
                 )}
-              </HorizontalGroup>
+              </Stack>
             </div>
           );
         },
@@ -232,15 +232,21 @@ export const AddRespondersPopup = observer(
           const disabled = userIsSelected(user);
 
           return (
-            <div onClick={() => (disabled ? undefined : onClickUser(user))} className={cx('responder-item')}>
-              <HorizontalGroup justify="space-between">
-                <HorizontalGroup>
+            <div onClick={() => (disabled ? undefined : onClickUser(user))} className={styles.responderItem}>
+              <Stack justifyContent="space-between">
+                <Stack>
                   <Avatar size="small" src={avatar} />
-                  <Text type={disabled ? 'disabled' : undefined}>{name || username}</Text>
-                </HorizontalGroup>
+                  <Text type={disabled ? 'disabled' : undefined} className={styles.responderName}>
+                    {name || username}
+                  </Text>
+                </Stack>
                 {/* TODO: we should add an elippsis and/or tooltip in the event that the user has a ton of teams */}
-                {teams?.length > 0 && <Text type="secondary">{teams.map(({ name }) => name).join(', ')}</Text>}
-              </HorizontalGroup>
+                {teams?.length > 0 && (
+                  <Text type="secondary" className={styles.responderTeam}>
+                    {teams.map(({ name }) => name).join(', ')}
+                  </Text>
+                )}
+              </Stack>
             </div>
           );
         },
@@ -259,7 +265,7 @@ export const AddRespondersPopup = observer(
     }) =>
       users.length > 0 && (
         <>
-          <Text type="secondary" className={cx('user-results-section-header')}>
+          <Text type="secondary" className={styles.userResultsSectionHeader}>
             {header}
           </Text>
           <GTable<ApiSchemas['UserIsCurrentlyOnCall']>
@@ -267,7 +273,7 @@ export const AddRespondersPopup = observer(
             rowKey="pk"
             columns={userColumns}
             data={users}
-            className={cx('table')}
+            className={styles.table}
             showHeader={false}
           />
         </>
@@ -275,17 +281,17 @@ export const AddRespondersPopup = observer(
 
     return (
       visible && (
-        <div data-testid="add-responders-popup" ref={ref} className={cx('add-responders-dropdown')}>
+        <div data-testid="add-responders-popup" ref={ref} className={styles.addRespondersDropdown}>
           <Input
             suffix={<Icon name="search" />}
             key="search"
-            className={cx('responders-filters')}
+            className={styles.respondersFilters}
             data-testid="add-responders-search-input"
-            value={searchTerm}
+            value={search}
             placeholder="Search"
             // @ts-ignore
             width={'unset'}
-            onChange={handleSetSearchTerm}
+            onChange={handleSetSearch}
           />
           {isCreateMode && (
             <RadioButtonGroup
@@ -293,13 +299,20 @@ export const AddRespondersPopup = observer(
                 { value: TabOptions.Teams, label: 'Teams' },
                 { value: TabOptions.Users, label: 'Users' },
               ]}
-              className={cx('radio-buttons')}
+              className={styles.radioButtons}
               value={activeOption}
               onChange={onChangeTab}
               fullWidth
             />
           )}
-          {searchLoading && <LoadingPlaceholder className={cx('loading-placeholder')} text="Loading..." />}
+          {searchLoading && (
+            <LoadingPlaceholder
+              className={css`
+                margin-bottom: 0;
+              `}
+              text="Loading..."
+            />
+          )}
           {!searchLoading && activeOption === TabOptions.Teams && (
             <>
               {selectedTeamResponder ? (
@@ -310,23 +323,23 @@ export const AddRespondersPopup = observer(
               ) : (
                 <>
                   <Alert
-                    className={cx('info-alert')}
+                    className={styles.infoAlert}
                     severity="info"
                     title={
                       (
                         <Text type="primary">
                           You can only page teams which have a Direct Paging integration that is configured.{' '}
                           <a
-                            className={cx('learn-more-link')}
+                            className={styles.learnMoreLink}
                             href="https://grafana.com/docs/oncall/latest/integrations/manual/#set-up-direct-paging-for-a-team"
                             target="_blank"
                             rel="noreferrer"
                           >
                             <Text type="link">
-                              <HorizontalGroup spacing="xs">
+                              <Stack gap={StackSize.xs}>
                                 Learn more
                                 <Icon name="external-link-alt" />
-                              </HorizontalGroup>
+                              </Stack>
                             </Text>
                           </a>
                         </Text>
@@ -338,7 +351,7 @@ export const AddRespondersPopup = observer(
                     rowKey="id"
                     columns={teamColumns}
                     data={teamSearchResults}
-                    className={cx('table')}
+                    className={styles.table}
                     showHeader={false}
                   />
                 </>
@@ -348,7 +361,7 @@ export const AddRespondersPopup = observer(
           {!searchLoading && activeOption === TabOptions.Users && (
             <>
               <Alert
-                className={cx('info-alert')}
+                className={styles.infoAlert}
                 severity="info"
                 title={
                   (

@@ -1,7 +1,8 @@
 import React, { useEffect, useReducer } from 'react';
 
 import { SelectableValue } from '@grafana/data';
-import { HorizontalGroup, Select, SelectBaseProps, VerticalGroup } from '@grafana/ui';
+import { Select, SelectBaseProps, Stack } from '@grafana/ui';
+import { OnCallAGStatus, StackSize } from 'helpers/consts';
 import { observer } from 'mobx-react';
 import { Controller, useFormContext } from 'react-hook-form';
 
@@ -9,7 +10,6 @@ import { Text } from 'components/Text/Text';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useCurrentIntegration } from 'pages/integration/OutgoingTab/OutgoingTab.hooks';
 import { useStore } from 'state/useStore';
-import { OnCallAGStatus } from 'utils/consts';
 
 import { ServiceNowHelper } from './ServiceNowConfig.helpers';
 
@@ -47,12 +47,12 @@ export const ServiceNowStatusSection: React.FC = observer(() => {
   };
 
   return (
-    <VerticalGroup spacing="md">
-      <HorizontalGroup spacing="xs" align="center">
+    <Stack direction="column" gap={StackSize.md}>
+      <Stack gap={StackSize.xs} alignItems="center">
         <Text type="primary" strong>
           Status Mapping
         </Text>
-      </HorizontalGroup>
+      </Stack>
 
       <table className={'filter-table'}>
         <thead>
@@ -199,6 +199,6 @@ export const ServiceNowStatusSection: React.FC = observer(() => {
           </tr>
         </tbody>
       </table>
-    </VerticalGroup>
+    </Stack>
   );
 });

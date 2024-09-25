@@ -1,17 +1,9 @@
 import React, { useCallback, useMemo } from 'react';
 
 import { css } from '@emotion/css';
-import {
-  Button,
-  Drawer,
-  Field,
-  HorizontalGroup,
-  Input,
-  Switch,
-  TextArea,
-  VerticalGroup,
-  useStyles2,
-} from '@grafana/ui';
+import { Button, Drawer, Field, Input, Switch, TextArea, Stack, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { openWarningNotification } from 'helpers/helpers';
 import { observer } from 'mobx-react';
 import { Controller, FormProvider, useForm, useFormContext } from 'react-hook-form';
 import { getUtilStyles } from 'styles/utils.styles';
@@ -26,8 +18,6 @@ import { PRIVATE_CHANNEL_NAME } from 'models/slack_channel/slack_channel.config'
 import { SlackChannel } from 'models/slack_channel/slack_channel.types';
 import { UserGroup } from 'models/user_group/user_group.types';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { openWarningNotification } from 'utils/utils';
 
 import { prepareForEdit } from './ScheduleForm.helpers';
 
@@ -95,23 +85,23 @@ export const ScheduleForm = observer((props: ScheduleFormProps) => {
       onClose={onHide}
       closeOnMaskClick={false}
     >
-      <VerticalGroup>
+      <Stack direction="column">
         <FormProvider {...formMethods}>
           <form id="Schedule" data-testid="schedule-form" onSubmit={handleSubmit(onSubmit)} className={utils.width100}>
             <FormFields scheduleType={data.type} />
             <div className="buttons">
-              <HorizontalGroup justify="flex-end">
+              <Stack justifyContent="flex-end">
                 <Button variant="secondary" onClick={onHide}>
                   Cancel
                 </Button>
                 <WithPermissionControlTooltip userAction={UserActions.SchedulesWrite}>
                   <Button type="submit">{id === 'new' ? 'Create' : 'Update'} Schedule</Button>
                 </WithPermissionControlTooltip>
-              </HorizontalGroup>
+              </Stack>
             </div>
           </form>
         </FormProvider>
-      </VerticalGroup>
+      </Stack>
     </Drawer>
   );
 });
@@ -199,7 +189,11 @@ const FormFields = ({ scheduleType }: { scheduleType: Schedule['type'] }) => {
 };
 
 const ScheduleCommonFields = () => {
-  const { grafanaTeamStore } = useStore();
+  const {
+    grafanaTeamStore,
+    // dereferencing items is needed to rerender GSelect
+    grafanaTeamStore: { items: grafanaTeamItems },
+  } = useStore();
 
   const { control, formState } = useFormContext<FormFields>();
   const { errors } = formState;
@@ -222,7 +216,7 @@ const ScheduleCommonFields = () => {
         render={({ field }) => (
           <Field label="Assign to team" invalid={!!errors.team} error={errors.team?.message}>
             <GSelect<GrafanaTeam>
-              items={grafanaTeamStore.items}
+              items={grafanaTeamItems}
               fetchItemsFn={grafanaTeamStore.updateItems}
               fetchItemFn={grafanaTeamStore.fetchItemById}
               getSearchResult={grafanaTeamStore.getSearchResult}
@@ -239,12 +233,18 @@ const ScheduleCommonFields = () => {
   );
 };
 
-const ScheduleNotificationSettingsFields = () => {
+const ScheduleNotificationSettingsFields = observer(() => {
   const store = useStore();
 
   const styles = useStyles2(getStyles);
 
-  const { slackChannelStore, userGroupStore } = store;
+  const {
+    slackChannelStore,
+    userGroupStore,
+    // dereferencing items is needed to rerender GSelect
+    slackChannelStore: { items: slackChannelItems },
+    userGroupStore: { items: userGroupItems },
+  } = store;
 
   const {
     control,
@@ -265,7 +265,7 @@ const ScheduleNotificationSettingsFields = () => {
           >
             <GSelect<SlackChannel>
               allowClear
-              items={slackChannelStore.items}
+              items={slackChannelItems}
               fetchItemsFn={slackChannelStore.updateItems}
               fetchItemFn={slackChannelStore.updateItem}
               getSearchResult={slackChannelStore.getSearchResult}
@@ -291,7 +291,7 @@ const ScheduleNotificationSettingsFields = () => {
           >
             <GSelect<UserGroup>
               allowClear
-              items={userGroupStore.items}
+              items={userGroupItems}
               fetchItemsFn={userGroupStore.updateItems}
               fetchItemFn={userGroupStore.fetchItemById}
               getSearchResult={userGroupStore.getSearchResult}
@@ -395,7 +395,7 @@ const ScheduleNotificationSettingsFields = () => {
       />
     </Collapse>
   );
-};
+});
 
 export const getStyles = () => ({
   collapse: css`

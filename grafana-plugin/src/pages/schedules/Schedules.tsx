@@ -2,16 +2,19 @@ import React, { SyntheticEvent } from 'react';
 
 import { cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { Button, HorizontalGroup, IconButton, LoadingPlaceholder, VerticalGroup, withTheme2 } from '@grafana/ui';
+import { Button, IconButton, LoadingPlaceholder, Stack, withTheme2 } from '@grafana/ui';
+import { LocationHelper } from 'helpers/LocationHelper';
+import { UserActions } from 'helpers/authorization/authorization';
+import { PAGE, PLUGIN_ROOT, StackSize, TEXT_ELLIPSIS_CLASS } from 'helpers/consts';
+import { PropsWithRouter, withRouter } from 'helpers/hoc';
 import { observer } from 'mobx-react';
 import qs from 'query-string';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { getUtilStyles } from 'styles/utils.styles';
 
 import { Avatar } from 'components/Avatar/Avatar';
+import { GTable, GTableProps } from 'components/GTable/GTable';
 import { NewScheduleSelector } from 'components/NewScheduleSelector/NewScheduleSelector';
 import { PluginLink } from 'components/PluginLink/PluginLink';
-import { GTable } from 'components/Table/Table';
 import { Text } from 'components/Text/Text';
 import { TextEllipsisTooltip } from 'components/TextEllipsisTooltip/TextEllipsisTooltip';
 import { TooltipBadge } from 'components/TooltipBadge/TooltipBadge';
@@ -28,13 +31,10 @@ import { Schedule, ScheduleView } from 'models/schedule/schedule.types';
 import { getSlackChannelName } from 'models/slack_channel/slack_channel.helpers';
 import { WithStoreProps, PageProps } from 'state/types';
 import { withMobXProviderContext } from 'state/withStore';
-import { LocationHelper } from 'utils/LocationHelper';
-import { UserActions } from 'utils/authorization/authorization';
-import { PAGE, PLUGIN_ROOT, TEXT_ELLIPSIS_CLASS } from 'utils/consts';
 
 import { getSchedulesStyles } from './Schedules.styles';
 
-interface SchedulesPageProps extends WithStoreProps, RouteComponentProps, PageProps {
+interface SchedulesPageProps extends WithStoreProps, PageProps, PropsWithRouter<{}> {
   theme: GrafanaTheme2;
 }
 
@@ -62,7 +62,6 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
     const {
       store: { userStore },
     } = this.props;
-
     userStore.fetchItems();
   }
 
@@ -79,20 +78,20 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
       <>
         <div>
           <div className={styles.title}>
-            <HorizontalGroup justify="space-between">
+            <Stack justifyContent="space-between">
               <Text.Title level={3}>Schedules</Text.Title>
               <div className={styles.schedulesActions}>
-                <HorizontalGroup>
+                <Stack>
                   <Text type="secondary">View in timezone:</Text>
                   <UserTimezoneSelect onChange={this.refreshExpandedSchedules} />
-                </HorizontalGroup>
+                </Stack>
                 <WithPermissionControlTooltip userAction={UserActions.SchedulesWrite}>
                   <Button variant="primary" onClick={this.handleCreateScheduleClick}>
                     + New schedule
                   </Button>
                 </WithPermissionControlTooltip>
               </div>
-            </HorizontalGroup>
+            </Stack>
           </div>
           <div className={cx(styles.schedule, styles.schedulePersonal)}>
             <SchedulePersonal userPk={store.userStore.currentUserPk} />
@@ -105,7 +104,7 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
               onChange={this.handleSchedulesFiltersChange}
             />
           </div>
-          <div data-testid="schedules-table">
+          <div className={cx(styles.tableRoot)} data-testid="schedules-table">
             <GTable
               className={styles.table}
               columns={this.getTableColumns()}
@@ -115,10 +114,9 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
                 total: results ? Math.ceil((count || 0) / page_size) : 0,
                 onChange: this.handlePageChange,
               }}
-              tableLayout="fixed"
               rowKey="id"
               expandable={{
-                expandedRowKeys: expandedRowKeys,
+                expandedRowKeys,
                 onExpand: this.handleExpandRow,
                 expandedRowRender: this.renderSchedule,
                 expandRowByClick: true,
@@ -162,9 +160,12 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
   };
 
   handleCreateSchedule = (data: Schedule) => {
-    const { history, query } = this.props;
+    const {
+      router: { navigate },
+      query,
+    } = this.props;
 
-    history.push(`${PLUGIN_ROOT}/schedules/${data.id}?${qs.stringify(query)}`);
+    navigate(`${PLUGIN_ROOT}/schedules/${data.id}?${qs.stringify(query)}`);
   };
 
   handleExpandRow = (expanded: boolean, data: Schedule) => {
@@ -205,9 +206,12 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
   };
 
   getScheduleClickHandler = (scheduleId: Schedule['id']) => {
-    const { history, query } = this.props;
+    const {
+      router: { navigate },
+      query,
+    } = this.props;
 
-    return () => history.push(`${PLUGIN_ROOT}/schedules/${scheduleId}?${qs.stringify(query)}`);
+    return () => navigate(`${PLUGIN_ROOT}/schedules/${scheduleId}?${qs.stringify(query)}`);
   };
 
   renderType = (value: number) => {
@@ -225,7 +229,7 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
 
     const relatedEscalationChains = scheduleStore.relatedEscalationChains[item.id];
     return (
-      <HorizontalGroup>
+      <Stack>
         {item.number_of_escalation_chains > 0 && (
           <TooltipBadge
             borderType="success"
@@ -233,7 +237,7 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
             text={item.number_of_escalation_chains}
             tooltipTitle="Used in escalations"
             tooltipContent={
-              <VerticalGroup spacing="sm">
+              <Stack direction="column" gap={StackSize.sm}>
                 {relatedEscalationChains ? (
                   relatedEscalationChains.length ? (
                     relatedEscalationChains.map((escalationChain) => (
@@ -249,7 +253,7 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
                 ) : (
                   <LoadingPlaceholder text="Loading related escalation chains..." />
                 )}
-              </VerticalGroup>
+              </Stack>
             }
             onHover={this.getUpdateRelatedEscalationChainsHandler(item.id)}
           />
@@ -262,17 +266,17 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
             text={item.warnings.length}
             tooltipTitle="Warnings"
             tooltipContent={
-              <VerticalGroup spacing="none">
+              <Stack direction="column" gap={StackSize.none}>
                 {item.warnings.map((warning, index) => (
                   <Text type="primary" key={index}>
                     {warning}
                   </Text>
                 ))}
-              </VerticalGroup>
+              </Stack>
             }
           />
         )}
-      </HorizontalGroup>
+      </Stack>
     );
   };
 
@@ -282,29 +286,29 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
     return <PluginLink query={{ page: 'schedules', id: item.id, ...query }}>{item.name}</PluginLink>;
   };
 
-  renderOncallNow = (item: Schedule, _index: number) => {
+  renderOncallNow = (item: Schedule) => {
     const { theme } = this.props;
     const utilsStyles = getUtilStyles(theme);
 
     if (item.on_call_now?.length > 0) {
       return (
         <div className="table__email-column">
-          <VerticalGroup>
+          <Stack direction="column">
             {item.on_call_now.map((user) => {
               return (
                 <PluginLink key={user.pk} query={{ page: 'users', id: user.pk }} className="table__email-content">
-                  <HorizontalGroup>
+                  <Stack>
                     <TextEllipsisTooltip placement="top" content={user.username}>
                       <Text type="secondary" className={cx(TEXT_ELLIPSIS_CLASS)}>
                         <Avatar size="small" src={user.avatar} />{' '}
                         <span className={cx(utilsStyles.wordBreakAll)}>{user.username}</span>
                       </Text>
                     </TextEllipsisTooltip>
-                  </HorizontalGroup>
+                  </Stack>
                 </PluginLink>
               );
             })}
-          </VerticalGroup>
+          </Stack>
         </div>
       );
     }
@@ -327,7 +331,7 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
     return (
       /* Wrapper div for onClick event to prevent expanding schedule view on delete/edit click */
       <div onClick={(event: SyntheticEvent) => event.stopPropagation()}>
-        <HorizontalGroup>
+        <Stack>
           <WithPermissionControlTooltip key="edit" userAction={UserActions.SchedulesWrite}>
             <IconButton tooltip="Settings" name="cog" onClick={this.getEditScheduleClickHandler(item.id)} />
           </WithPermissionControlTooltip>
@@ -336,7 +340,7 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
               <IconButton tooltip="Delete" name="trash-alt" onClick={this.getDeleteScheduleClickHandler(item.id)} />
             </WithConfirm>
           </WithPermissionControlTooltip>
-        </HorizontalGroup>
+        </Stack>
       </div>
     );
   };
@@ -407,11 +411,17 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
     };
   };
 
-  getTableColumns = () => {
+  getTableColumns = (): GTableProps<Schedule>['columns'] => {
     const { grafanaTeamStore } = this.props.store;
     const styles = getSchedulesStyles();
 
     return [
+      {
+        // Allow space for icon (>)
+        width: '40px',
+        title: '',
+        render: () => <></>,
+      },
       {
         width: '10%',
         title: 'Type',
@@ -461,4 +471,6 @@ class _SchedulesPage extends React.Component<SchedulesPageProps, SchedulesPageSt
   };
 }
 
-export const SchedulesPage = withRouter(withMobXProviderContext(withTheme2(_SchedulesPage)));
+export const SchedulesPage = withRouter<{}, Omit<SchedulesPageProps, 'store' | 'meta' | 'theme'>>(
+  withMobXProviderContext(withTheme2(_SchedulesPage))
+);

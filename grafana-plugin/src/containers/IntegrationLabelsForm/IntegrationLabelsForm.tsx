@@ -1,39 +1,27 @@
 import React, { ChangeEvent, useState } from 'react';
 
+import { css } from '@emotion/css';
 import { ServiceLabels } from '@grafana/labels';
-import {
-  Alert,
-  Button,
-  Drawer,
-  Dropdown,
-  HorizontalGroup,
-  InlineSwitch,
-  Input,
-  Menu,
-  VerticalGroup,
-} from '@grafana/ui';
-import cn from 'classnames/bind';
+import { Alert, Button, Drawer, Dropdown, InlineSwitch, Input, Menu, Stack, useStyles2 } from '@grafana/ui';
+import { DOCS_ROOT, StackSize, GENERIC_ERROR } from 'helpers/consts';
+import { openErrorNotification } from 'helpers/helpers';
 import { observer } from 'mobx-react';
 
 import { Collapse } from 'components/Collapse/Collapse';
-import { MonacoEditor, MONACO_LANGUAGE } from 'components/MonacoEditor/MonacoEditor';
+import { MonacoEditor, MonacoLanguage } from 'components/MonacoEditor/MonacoEditor';
 import { PluginLink } from 'components/PluginLink/PluginLink';
 import { RenderConditionally } from 'components/RenderConditionally/RenderConditionally';
 import { Text } from 'components/Text/Text';
+import {
+  getIsAddBtnDisabled,
+  getIsTooManyLabelsWarningVisible,
+} from 'containers/IntegrationLabelsForm/IntegrationLabelsForm.helpers';
 import { IntegrationTemplate } from 'containers/IntegrationTemplate/IntegrationTemplate';
 import { splitToGroups } from 'models/label/label.helpers';
 import { LabelsErrors } from 'models/label/label.types';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { LabelTemplateOptions } from 'pages/integration/IntegrationCommon.config';
 import { useStore } from 'state/useStore';
-import { DOCS_ROOT, GENERIC_ERROR } from 'utils/consts';
-import { openErrorNotification } from 'utils/utils';
-
-import { getIsAddBtnDisabled, getIsTooManyLabelsWarningVisible } from './IntegrationLabelsForm.helpers';
-
-import styles from './IntegrationLabelsForm.module.css';
-
-const cx = cn.bind(styles);
 
 const INPUT_WIDTH = 280;
 
@@ -52,6 +40,7 @@ export const IntegrationLabelsForm = observer((props: IntegrationLabelsFormProps
   const [showTemplateEditor, setShowTemplateEditor] = useState<boolean>(false);
   const [customLabelsErrors, setCustomLabelsErrors] = useState<LabelsErrors>([]);
   const [customLabelIndexToShowTemplateEditor, setCustomLabelIndexToShowTemplateEditor] = useState<number>(undefined);
+  const styles = useStyles2(getStyles);
 
   const { alertReceiveChannelStore } = store;
 
@@ -93,7 +82,12 @@ export const IntegrationLabelsForm = observer((props: IntegrationLabelsFormProps
         scrollableContent
         title="Alert group labeling"
         subtitle={
-          <Text size="small" className="u-margin-top-xs">
+          <Text
+            size="small"
+            className={css`
+              margin-top: 4px;
+            `}
+          >
             Combination of settings that manage the labeling of alert groups. More information in{' '}
             <a href={`${DOCS_ROOT}/integrations/#alert-group-labels`} target="_blank" rel="noreferrer">
               <Text type="link">documentation</Text>
@@ -105,7 +99,7 @@ export const IntegrationLabelsForm = observer((props: IntegrationLabelsFormProps
         closeOnMaskClick={false}
         width="640px"
       >
-        <VerticalGroup spacing="lg">
+        <Stack direction="column" gap={StackSize.lg}>
           <RenderConditionally shouldRender={getIsTooManyLabelsWarningVisible(alertGroupLabels)}>
             <Alert title="More than 15 labels added" severity="warning">
               We support up to 15 labels per Alert group. Please remove extra labels.
@@ -113,18 +107,18 @@ export const IntegrationLabelsForm = observer((props: IntegrationLabelsFormProps
               Otherwise, only the first 15 labels (alphabetically sorted by keys) will be applied.
             </Alert>
           </RenderConditionally>
-          <VerticalGroup>
+          <Stack direction="column">
             <Text>Integration labels</Text>
             {alertReceiveChannel.labels.length ? (
-              <VerticalGroup spacing="xs">
+              <Stack direction="column" gap={StackSize.xs}>
                 <Text type="secondary" size="small">
                   Labels inherited from <PluginLink onClick={handleOpenIntegrationSettings}>the integration</PluginLink>
                   . This behavior can be disabled using the toggle option.
                 </Text>
-                <ul className={cx('labels-list')}>
+                <ul className={styles.labelsList}>
                   {alertReceiveChannel.labels.map((label) => (
                     <li key={label.key.id}>
-                      <HorizontalGroup spacing="xs">
+                      <Stack gap={StackSize.xs}>
                         <Input width={INPUT_WIDTH / 8} value={label.key.name} disabled />
                         <Input width={INPUT_WIDTH / 8} value={label.value.name} disabled />
                         <InlineSwitch
@@ -132,20 +126,20 @@ export const IntegrationLabelsForm = observer((props: IntegrationLabelsFormProps
                           transparent
                           onChange={() => onInheritanceChange(label.key.id)}
                         />
-                      </HorizontalGroup>
+                      </Stack>
                     </li>
                   ))}
                 </ul>
-              </VerticalGroup>
+              </Stack>
             ) : (
-              <VerticalGroup>
+              <Stack direction="column">
                 <Text type="secondary">There are no labels to inherit yet</Text>
                 <Text type="link" onClick={handleOpenIntegrationSettings} clickable>
                   Add labels to the integration
                 </Text>
-              </VerticalGroup>
+              </Stack>
             )}
-          </VerticalGroup>
+          </Stack>
 
           <CustomLabels
             alertGroupLabels={alertGroupLabels}
@@ -157,10 +151,22 @@ export const IntegrationLabelsForm = observer((props: IntegrationLabelsFormProps
             customLabelsErrors={customLabelsErrors}
           />
 
-          <Collapse isOpen={false} label="Multi-label extraction template" contentClassName="u-padding-top-none">
-            <VerticalGroup>
-              <HorizontalGroup justify="space-between" style={{ marginBottom: '10px' }} align="flex-end">
-                <Text type="secondary" size="small" className="u-padding-left-lg">
+          <Collapse
+            isOpen={false}
+            label="Multi-label extraction template"
+            contentClassName={css`
+              padding-top: none;
+            `}
+          >
+            <Stack direction="column">
+              <Stack justifyContent="space-between" alignItems="flex-end">
+                <Text
+                  type="secondary"
+                  size="small"
+                  className={css`
+                    padding-left: 24px;
+                  `}
+                >
                   Allows for the extraction and modification of multiple labels from the alert payload using a single
                   template. Supports not only dynamic values but also dynamic keys. The Jinja template must result in
                   valid JSON dictionary.
@@ -172,32 +178,33 @@ export const IntegrationLabelsForm = observer((props: IntegrationLabelsFormProps
                     setShowTemplateEditor(true);
                   }}
                 />
-              </HorizontalGroup>
+              </Stack>
               <MonacoEditor
                 value={alertGroupLabels.template}
                 height="200px"
                 data={{}}
                 showLineNumbers={false}
-                language={MONACO_LANGUAGE.jinja2}
+                language={MonacoLanguage.jinja2}
                 onChange={(value) => {
                   setAlertGroupLabels({ ...alertGroupLabels, template: value });
                 }}
               />
-            </VerticalGroup>
+            </Stack>
           </Collapse>
 
-          <div className={cx('buttons')}>
-            <HorizontalGroup justify="flex-end">
+          <div className={styles.buttons}>
+            <Stack justifyContent="flex-end">
               <Button variant="secondary" onClick={onHide}>
                 Close
               </Button>
               <Button variant="primary" onClick={handleSave}>
                 Save
               </Button>
-            </HorizontalGroup>
+            </Stack>
           </div>
-        </VerticalGroup>
+        </Stack>
       </Drawer>
+
       {customLabelIndexToShowTemplateEditor !== undefined && (
         <IntegrationTemplate
           id={id}
@@ -284,36 +291,20 @@ const CustomLabels = (props: CustomLabelsProps) => {
   };
 
   const onLoadKeys = async (search?: string) => {
-    let result = undefined;
-
-    try {
-      result = await labelsStore.loadKeys(search);
-    } catch (error) {
-      openErrorNotification('There was an error processing your request. Please try again');
-    }
-
-    const groups = splitToGroups(result);
-
-    return groups;
+    const result = await labelsStore.loadKeys(search);
+    return splitToGroups(result);
   };
 
   const onLoadValuesForKey = async (key: string, search?: string) => {
-    let result = undefined;
-
-    try {
-      const { values } = await labelsStore.loadValuesForKey(key, search);
-      result = values;
-    } catch (error) {
-      openErrorNotification('There was an error processing your request. Please try again');
+    if (!key) {
+      return [];
     }
-
-    const groups = splitToGroups(result);
-
-    return groups;
+    const { values } = await labelsStore.loadValuesForKey(key, search);
+    return splitToGroups(values);
   };
 
   return (
-    <VerticalGroup>
+    <Stack direction="column">
       <Text>Dynamic & Static labels</Text>
       <Text type="secondary" size="small">
         Dynamic: label values are extracted from the alert payload using Jinja. Keys remain static.
@@ -392,6 +383,25 @@ const CustomLabels = (props: CustomLabelsProps) => {
           Add label
         </Button>
       </Dropdown>
-    </VerticalGroup>
+    </Stack>
   );
+};
+
+const getStyles = () => {
+  return {
+    labelsList: css`
+      margin: 0;
+      list-style-type: none;
+
+      > li {
+        margin: 10px 0;
+      }
+    `,
+
+    buttons: css`
+      width: 100%;
+      margin-top: 30px;
+      margin-bottom: 24px;
+    `,
+  };
 };

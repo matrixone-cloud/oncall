@@ -1,8 +1,10 @@
 import React, { useCallback } from 'react';
 
+import { css } from '@emotion/css';
 import { SelectableValue } from '@grafana/data';
-import { Button, Drawer, Field, HorizontalGroup, Select, VerticalGroup, useStyles2 } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { Button, Drawer, Field, Select, Stack, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { openNotification, showApiError } from 'helpers/helpers';
 import { observer } from 'mobx-react';
 import Emoji from 'react-emoji-render';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
@@ -14,12 +16,6 @@ import { AlertReceiveChannelHelper } from 'models/alert_receive_channel/alert_re
 import { MaintenanceMode } from 'models/alert_receive_channel/alert_receive_channel.types';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { openNotification, showApiError } from 'utils/utils';
-
-import styles from './MaintenanceForm.module.css';
-
-const cx = cn.bind(styles);
 
 interface MaintenanceFormProps {
   initialData: {
@@ -37,7 +33,11 @@ interface FormFields {
 
 export const MaintenanceForm = observer((props: MaintenanceFormProps) => {
   const { onUpdate, onHide, initialData = {} } = props;
-  const { alertReceiveChannelStore } = useStore();
+  const {
+    alertReceiveChannelStore,
+    // dereferencing items is needed to rerender GSelect
+    alertReceiveChannelStore: { items: alertReceiveChannelItems },
+  } = useStore();
 
   const onSubmit = useCallback(async (data) => {
     try {
@@ -65,12 +65,13 @@ export const MaintenanceForm = observer((props: MaintenanceFormProps) => {
     formState: { errors },
   } = formMethods;
 
+  const styles = useStyles2(getStyles);
   const utils = useStyles2(getUtilStyles);
 
   return (
     <Drawer width="640px" scrollableContent title="Start Maintenance Mode" onClose={onHide} closeOnMaskClick={false}>
-      <div className={cx('content')} data-testid="maintenance-mode-drawer">
-        <VerticalGroup>
+      <div className={styles.content} data-testid="maintenance-mode-drawer">
+        <Stack direction="column">
           Start maintenance mode when performing scheduled maintenance or updates on the infrastructure, which may
           trigger false alarms.
           <FormProvider {...formMethods}>
@@ -87,7 +88,7 @@ export const MaintenanceForm = observer((props: MaintenanceFormProps) => {
                   >
                     <GSelect<ApiSchemas['AlertReceiveChannel']>
                       disabled
-                      items={alertReceiveChannelStore.items}
+                      items={alertReceiveChannelItems}
                       fetchItemsFn={alertReceiveChannelStore.fetchItems}
                       fetchItemFn={alertReceiveChannelStore.fetchItemById}
                       getSearchResult={() => AlertReceiveChannelHelper.getSearchResult(alertReceiveChannelStore)}
@@ -178,7 +179,7 @@ export const MaintenanceForm = observer((props: MaintenanceFormProps) => {
                   </Field>
                 )}
               />
-              <HorizontalGroup justify="flex-end">
+              <Stack justifyContent="flex-end">
                 <Button variant="secondary" onClick={onHide}>
                   Cancel
                 </Button>
@@ -187,11 +188,19 @@ export const MaintenanceForm = observer((props: MaintenanceFormProps) => {
                     Start
                   </Button>
                 </WithPermissionControlTooltip>
-              </HorizontalGroup>
+              </Stack>
             </form>
           </FormProvider>
-        </VerticalGroup>
+        </Stack>
       </div>
     </Drawer>
   );
 });
+
+const getStyles = () => {
+  return {
+    content: css`
+      margin: 4px 4px 400px 4px;
+    `,
+  };
+};

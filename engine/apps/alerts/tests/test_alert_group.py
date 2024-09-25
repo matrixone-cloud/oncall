@@ -1,3 +1,4 @@
+import hashlib
 from unittest.mock import call, patch
 
 import pytest
@@ -589,6 +590,24 @@ def test_alert_group_get_paged_users(
     assert len(paged_users) == 1
     assert alert_group.get_paged_users()[0]["pk"] == user.public_primary_key
 
+    # user was paged and then paged again, then unpaged - they should not show up
+    alert_group = make_alert_group(alert_receive_channel)
+    _make_log_record(alert_group, user, AlertGroupLogRecord.TYPE_DIRECT_PAGING)
+    _make_log_record(alert_group, user, AlertGroupLogRecord.TYPE_DIRECT_PAGING)
+    _make_log_record(alert_group, user, AlertGroupLogRecord.TYPE_UNPAGE_USER)
+
+    paged_users = alert_group.get_paged_users()
+    assert len(paged_users) == 0
+
+    # adding extra unpage events should not break things
+    _make_log_record(alert_group, user, AlertGroupLogRecord.TYPE_UNPAGE_USER)
+    _make_log_record(alert_group, user, AlertGroupLogRecord.TYPE_UNPAGE_USER)
+    _make_log_record(alert_group, user, AlertGroupLogRecord.TYPE_DIRECT_PAGING)
+
+    paged_users = alert_group.get_paged_users()
+    assert len(paged_users) == 1
+    assert alert_group.get_paged_users()[0]["pk"] == user.public_primary_key
+
 
 @patch("apps.alerts.models.AlertGroup.start_unsilence_task", return_value=None)
 @pytest.mark.django_db
@@ -740,3 +759,40 @@ def test_update_state_by_backsync(
     assert (last_log.action_source, last_log.author, last_log.step_specific_info) == expected_log_data
     assert last_log.type == to_firing_log_type
     mock_start_escalation_if_needed.assert_called_once()
+
+
+@pytest.mark.django_db
+def test_alert_group_created_if_resolve_condition_but_auto_resolving_disabled(
+    make_organization,
+    make_alert_receive_channel,
+    make_alert_group,
+):
+    organization = make_organization()
+    # grouping condition will match. resolve condition will evaluate to True, but auto resolving is disabled
+    grouping_distinction = "abcdef"
+    alert_receive_channel = make_alert_receive_channel(
+        organization,
+        grouping_id_template=grouping_distinction,
+        resolve_condition_template="True",
+        allow_source_based_resolving=False,
+    )
+    # existing alert group, resolved, with a matching grouping distinction
+    resolved_alert_group = make_alert_group(
+        alert_receive_channel,
+        resolved=True,
+        distinction=hashlib.md5(grouping_distinction.encode()).hexdigest(),
+    )
+
+    # an alert for the same integration is received
+    alert = Alert.create(
+        title="the title",
+        message="the message",
+        alert_receive_channel=alert_receive_channel,
+        raw_request_data={},
+        integration_unique_data={},
+        image_url=None,
+        link_to_upstream_details=None,
+    )
+
+    # the alert will create a new alert group
+    assert alert.group != resolved_alert_group

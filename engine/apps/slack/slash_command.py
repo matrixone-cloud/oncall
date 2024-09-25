@@ -1,3 +1,5 @@
+from django.conf import settings
+
 from apps.slack.types.interaction_payloads import SlashCommandPayload
 
 
@@ -22,7 +24,8 @@ class SlashCommand:
     @property
     def subcommand(self):
         """
-        Return first arg as subcommand
+        Return first arg as action subcommand: part of command which defines action
+        Example: /grafana escalate -> escalate
         """
         return self.args[0] if len(self.args) > 0 else None
 
@@ -34,3 +37,7 @@ class SlashCommand:
         command = payload["command"].lstrip("/")
         args = payload["text"].split()
         return SlashCommand(command, args)
+
+    @property
+    def is_root_command(self):
+        return self.command == settings.SLACK_IRM_ROOT_COMMAND

@@ -1,15 +1,15 @@
 import React from 'react';
 
-import { useStyles2, Input, IconButton, Drawer, HorizontalGroup } from '@grafana/ui';
+import { useStyles2, Input, IconButton, Drawer, Stack } from '@grafana/ui';
+import { useDrawer } from 'helpers/hooks';
 import { observer } from 'mobx-react';
 
 import { Button } from 'components/Button/Button';
+import { CollapsibleTreeView } from 'components/CollapsibleTreeView/CollapsibleTreeView';
 import { CopyToClipboardIcon } from 'components/CopyToClipboardIcon/CopyToClipboardIcon';
-import { IntegrationCollapsibleTreeView } from 'components/IntegrationCollapsibleTreeView/IntegrationCollapsibleTreeView';
 import { IntegrationBlock } from 'components/Integrations/IntegrationBlock';
 import { IntegrationTag } from 'components/Integrations/IntegrationTag';
 import { Text } from 'components/Text/Text';
-import { useDrawer } from 'utils/hooks';
 
 import { NewOutgoingWebhookDrawerContent } from './NewOutgoingWebhookDrawerContent';
 import { OtherIntegrations } from './OtherIntegrations';
@@ -40,7 +40,7 @@ export const OutgoingTab = ({ openSnowConfigurationDrawer }: { openSnowConfigura
           <NewOutgoingWebhookDrawerContent closeDrawer={closeDrawer} />
         </Drawer>
       )}
-      <IntegrationCollapsibleTreeView
+      <CollapsibleTreeView
         configElements={[
           {
             customIcon: 'plug',
@@ -56,12 +56,12 @@ export const OutgoingTab = ({ openSnowConfigurationDrawer }: { openSnowConfigura
                   openDrawer={openDrawer}
                   noItemsInfo={
                     <div className={styles.noWebhooksInfo}>
-                      <HorizontalGroup>
+                      <Stack>
                         <Text type="secondary">There are no webhooks.</Text>
                         <Button variant="primary" showAsLink onClick={() => openDrawer('newOutgoingWebhook')}>
                           Add one
                         </Button>
-                      </HorizontalGroup>
+                      </Stack>
                     </div>
                   }
                 />

@@ -1,12 +1,12 @@
 import React, { FC } from 'react';
 
-import { Button, HorizontalGroup, useStyles2 } from '@grafana/ui';
+import { Button, Stack, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { useCommonStyles } from 'helpers/hooks';
 import { useForm, FormProvider } from 'react-hook-form';
 
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { useCommonStyles } from 'utils/hooks';
 
 import { useIntegrationIdFromUrl } from './OutgoingTab.hooks';
 import { getStyles } from './OutgoingTab.styles';
@@ -42,14 +42,14 @@ export const NewOutgoingWebhookDrawerContent: FC<NewOutgoingWebhookDrawerContent
           <OutgoingWebhookFormFields webhookId="new" />
         </div>
         <div className={commonStyles.bottomDrawerButtons}>
-          <HorizontalGroup justify="flex-end">
+          <Stack justifyContent="flex-end">
             <Button variant="secondary" onClick={closeDrawer}>
               Close
             </Button>
             <WithPermissionControlTooltip userAction={UserActions.OutgoingWebhooksWrite}>
               <Button type="submit">Create</Button>
             </WithPermissionControlTooltip>
-          </HorizontalGroup>
+          </Stack>
         </div>
       </form>
     </FormProvider>

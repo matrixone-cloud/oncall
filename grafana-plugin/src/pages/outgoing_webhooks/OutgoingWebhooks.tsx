@@ -2,11 +2,14 @@ import React from 'react';
 
 import { css, cx } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { Button, ConfirmModal, ConfirmModalProps, HorizontalGroup, Icon, IconButton, withTheme2 } from '@grafana/ui';
+import { Button, ConfirmModal, ConfirmModalProps, Icon, IconButton, Stack, withTheme2 } from '@grafana/ui';
+import { isUserActionAllowed, UserActions } from 'helpers/authorization/authorization';
+import { PAGE, PLUGIN_ROOT, StackSize, TEXT_ELLIPSIS_CLASS } from 'helpers/consts';
+import { openErrorNotification, openNotification } from 'helpers/helpers';
+import { PropsWithRouter, withRouter } from 'helpers/hoc';
 import { observer } from 'mobx-react';
 import { LegacyNavHeading } from 'navbar/LegacyNavHeading';
 import CopyToClipboard from 'react-copy-to-clipboard';
-import { RouteComponentProps, withRouter } from 'react-router-dom';
 import { bem, getUtilStyles } from 'styles/utils.styles';
 
 import { GTable } from 'components/GTable/GTable';
@@ -31,13 +34,15 @@ import { ApiSchemas } from 'network/oncall-api/api.types';
 import { AppFeature } from 'state/features';
 import { PageProps, WithStoreProps } from 'state/types';
 import { withMobXProviderContext } from 'state/withStore';
-import { isUserActionAllowed, UserActions } from 'utils/authorization/authorization';
-import { PAGE, PLUGIN_ROOT, TEXT_ELLIPSIS_CLASS } from 'utils/consts';
-import { openErrorNotification, openNotification } from 'utils/utils';
 
 import { WebhookFormActionType } from './OutgoingWebhooks.types';
 
-interface OutgoingWebhooksProps extends WithStoreProps, PageProps, RouteComponentProps<{ id: string; action: string }> {
+interface RouteProps {
+  id: string;
+  action: string;
+}
+
+interface OutgoingWebhooksProps extends WithStoreProps, PageProps, PropsWithRouter<RouteProps> {
   theme: GrafanaTheme2;
 }
 
@@ -59,7 +64,7 @@ class OutgoingWebhooks extends React.Component<OutgoingWebhooksProps, OutgoingWe
   }
 
   componentDidUpdate(prevProps: OutgoingWebhooksProps) {
-    if (prevProps.match.params.id !== this.props.match.params.id && !this.state.outgoingWebhookAction) {
+    if (prevProps.router.params.id !== this.props.router.params.id && !this.state.outgoingWebhookAction) {
       this.parseQueryParams();
     }
   }
@@ -72,7 +77,7 @@ class OutgoingWebhooks extends React.Component<OutgoingWebhooksProps, OutgoingWe
 
     const {
       store,
-      match: {
+      router: {
         params: { id, action },
       },
     } = this.props;
@@ -103,8 +108,8 @@ class OutgoingWebhooks extends React.Component<OutgoingWebhooksProps, OutgoingWe
   render() {
     const {
       store: { outgoingWebhookStore, filtersStore, grafanaTeamStore, hasFeature },
-      history,
-      match: {
+      router: {
+        navigate,
         params: { id },
       },
     } = this.props;
@@ -127,7 +132,7 @@ class OutgoingWebhooks extends React.Component<OutgoingWebhooksProps, OutgoingWe
         ),
       },
       {
-        width: '10%',
+        width: '15%',
         title: 'Trigger type',
         dataIndex: 'trigger_type_name',
       },
@@ -232,7 +237,7 @@ class OutgoingWebhooks extends React.Component<OutgoingWebhooksProps, OutgoingWe
                 onDelete={async () => {
                   await this.onDeleteClick(outgoingWebhookId);
                   this.setState({ outgoingWebhookId: undefined, outgoingWebhookAction: undefined });
-                  history.push(`${PLUGIN_ROOT}/outgoing_webhooks`);
+                  navigate(`${PLUGIN_ROOT}/outgoing_webhooks`);
                 }}
               />
             )}
@@ -309,10 +314,10 @@ class OutgoingWebhooks extends React.Component<OutgoingWebhooksProps, OutgoingWe
             label: (
               <CopyToClipboard key="uid" text={record.id} onCopy={() => openNotification('Webhook ID has been copied')}>
                 <div>
-                  <HorizontalGroup type="primary" spacing="xs">
+                  <Stack gap={StackSize.xs}>
                     <Icon name="clipboard-alt" />
                     <Text type="primary">UID: {record.id}</Text>
-                  </HorizontalGroup>
+                  </Stack>
                 </div>
               </CopyToClipboard>
             ),
@@ -332,10 +337,10 @@ class OutgoingWebhooks extends React.Component<OutgoingWebhooksProps, OutgoingWe
               }),
             requiredPermission: UserActions.OutgoingWebhooksWrite,
             label: (
-              <HorizontalGroup spacing="xs">
+              <Stack gap={StackSize.xs}>
                 <IconButton tooltip="Remove" tooltipPlacement="top" variant="destructive" name="trash-alt" />
                 <Text type="danger">Delete Webhook</Text>
-              </HorizontalGroup>
+              </Stack>
             ),
           },
         ]}
@@ -368,18 +373,22 @@ class OutgoingWebhooks extends React.Component<OutgoingWebhooksProps, OutgoingWe
   };
 
   onEditClick = (id: ApiSchemas['Webhook']['id']) => {
-    const { history } = this.props;
+    const {
+      router: { navigate },
+    } = this.props;
 
     this.setState({ outgoingWebhookId: id, outgoingWebhookAction: WebhookFormActionType.EDIT_SETTINGS }, () =>
-      history.push(`${PLUGIN_ROOT}/outgoing_webhooks/edit/${id}`)
+      navigate(`${PLUGIN_ROOT}/outgoing_webhooks/edit/${id}`)
     );
   };
 
   onCopyClick = (id: ApiSchemas['Webhook']['id']) => {
-    const { history } = this.props;
+    const {
+      router: { navigate },
+    } = this.props;
 
     this.setState({ outgoingWebhookId: id, outgoingWebhookAction: WebhookFormActionType.COPY }, () =>
-      history.push(`${PLUGIN_ROOT}/outgoing_webhooks/copy/${id}`)
+      navigate(`${PLUGIN_ROOT}/outgoing_webhooks/copy/${id}`)
     );
   };
 
@@ -407,19 +416,23 @@ class OutgoingWebhooks extends React.Component<OutgoingWebhooksProps, OutgoingWe
   };
 
   onLastRunClick = (id: ApiSchemas['Webhook']['id']) => {
-    const { history } = this.props;
+    const {
+      router: { navigate },
+    } = this.props;
 
     this.setState({ outgoingWebhookId: id, outgoingWebhookAction: WebhookFormActionType.VIEW_LAST_RUN }, () =>
-      history.push(`${PLUGIN_ROOT}/outgoing_webhooks/last_run/${id}`)
+      navigate(`${PLUGIN_ROOT}/outgoing_webhooks/last_run/${id}`)
     );
   };
 
   handleOutgoingWebhookFormHide = () => {
-    const { history } = this.props;
+    const {
+      router: { navigate },
+    } = this.props;
 
     this.setState({ outgoingWebhookId: undefined, outgoingWebhookAction: undefined });
 
-    history.push(`${PLUGIN_ROOT}/outgoing_webhooks`);
+    navigate(`${PLUGIN_ROOT}/outgoing_webhooks`);
   };
 }
 
@@ -459,4 +472,6 @@ const getStyles = () => {
   };
 };
 
-export const OutgoingWebhooksPage = withRouter(withMobXProviderContext(withTheme2(OutgoingWebhooks)));
+export const OutgoingWebhooksPage = withRouter<RouteProps, Omit<OutgoingWebhooksProps, 'store' | 'meta' | 'theme'>>(
+  withMobXProviderContext(withTheme2(OutgoingWebhooks))
+);

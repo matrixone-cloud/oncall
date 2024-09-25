@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 
-import { Button, HorizontalGroup, Icon, Input, Modal, useStyles2 } from '@grafana/ui';
+import { Button, Icon, Input, Modal, Stack, useStyles2 } from '@grafana/ui';
 import cn from 'classnames';
+import { useCommonStyles, useIsLoading } from 'helpers/hooks';
 import { debounce } from 'lodash-es';
 import { observer } from 'mobx-react';
 
@@ -10,9 +11,8 @@ import { AlertReceiveChannelHelper } from 'models/alert_receive_channel/alert_re
 import { ActionKey } from 'models/loader/action-keys';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useStore } from 'state/useStore';
-import { useCommonStyles, useIsLoading } from 'utils/hooks';
 
-import ConnectedIntegrationsTable from './ConnectedIntegrationsTable';
+import { ConnectedIntegrationsTable } from './ConnectedIntegrationsTable';
 import { useCurrentIntegration } from './OutgoingTab.hooks';
 import { getStyles } from './OutgoingTab.styles';
 
@@ -101,7 +101,7 @@ export const ConnectIntegrationModal = observer(({ onDismiss }: { onDismiss: () 
           [styles.connectIntegrationModalButtons]: count > page_size,
         })}
       >
-        <HorizontalGroup justify="flex-end">
+        <Stack justifyContent="flex-end">
           <Button variant="secondary" onClick={onDismiss}>
             Close
           </Button>
@@ -112,7 +112,7 @@ export const ConnectIntegrationModal = observer(({ onDismiss }: { onDismiss: () 
           >
             Connect
           </Button>
-        </HorizontalGroup>
+        </Stack>
       </div>
     </Modal>
   );

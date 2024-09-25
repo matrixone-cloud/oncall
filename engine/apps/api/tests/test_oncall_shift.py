@@ -53,7 +53,11 @@ def test_create_on_call_shift_rotation(on_call_shift_internal_api_setup, make_us
     with patch("apps.schedules.models.CustomOnCallShift.refresh_schedule") as mock_refresh_schedule:
         response = client.post(url, data, format="json", **make_user_auth_headers(user1, token))
 
-    expected_payload = data | {"id": response.data["id"], "updated_shift": None}
+    expected_payload = data | {
+        "id": response.data["id"],
+        "updated_shift": None,
+        "start_rotation_from_user_index": None,
+    }
     assert response.status_code == status.HTTP_201_CREATED
     assert response.json() == expected_payload
     assert mock_refresh_schedule.called
@@ -162,6 +166,7 @@ def test_create_on_call_shift_override(on_call_shift_internal_api_setup, make_us
         "updated_shift": None,
         "rolling_users": returned_rolling_users,
         "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.MONDAY],
+        "start_rotation_from_user_index": None,
     }
 
     assert response.status_code == status.HTTP_201_CREATED
@@ -209,6 +214,7 @@ def test_get_on_call_shift(
         "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.SUNDAY],
         "rolling_users": [[user1.public_primary_key], [user2.public_primary_key]],
         "updated_shift": None,
+        "start_rotation_from_user_index": None,
     }
 
     assert response.status_code == status.HTTP_200_OK
@@ -258,6 +264,7 @@ def test_get_calendar_on_call_shift(
         "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.SUNDAY],
         "rolling_users": [[user1.public_primary_key], [user2.public_primary_key]],
         "updated_shift": None,
+        "start_rotation_from_user_index": None,
     }
 
     assert response.status_code == status.HTTP_200_OK
@@ -309,6 +316,7 @@ def test_list_on_call_shift(
                 "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.SUNDAY],
                 "rolling_users": [[user1.public_primary_key], [user2.public_primary_key]],
                 "updated_shift": None,
+                "start_rotation_from_user_index": None,
             }
         ],
         "current_page_number": 1,
@@ -370,6 +378,7 @@ def test_list_on_call_shift_filter_schedule_id(
                 "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.SUNDAY],
                 "rolling_users": [[user1.public_primary_key], [user2.public_primary_key]],
                 "updated_shift": None,
+                "start_rotation_from_user_index": None,
             }
         ],
         "current_page_number": 1,
@@ -494,6 +503,7 @@ def test_update_future_on_call_shift(
         "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.MONDAY],
         "rolling_users": [[user1.public_primary_key]],
         "updated_shift": None,
+        "start_rotation_from_user_index": None,
     }
 
     assert response.status_code == status.HTTP_200_OK
@@ -543,6 +553,48 @@ def test_update_future_on_call_shift_removing_users(
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.data["rolling_users"][0] == "User(s) are required"
+
+
+@pytest.mark.django_db
+def test_update_on_call_shift_invalid_rolling_users(
+    on_call_shift_internal_api_setup,
+    make_on_call_shift,
+    make_user_auth_headers,
+):
+    token, user1, _, _, schedule = on_call_shift_internal_api_setup
+
+    client = APIClient()
+    start_date = (timezone.now() + timezone.timedelta(days=1)).replace(microsecond=0)
+
+    name = "Test Shift Rotation"
+    on_call_shift = make_on_call_shift(
+        schedule.organization,
+        shift_type=CustomOnCallShift.TYPE_ROLLING_USERS_EVENT,
+        schedule=schedule,
+        name=name,
+        start=start_date,
+        duration=timezone.timedelta(hours=1),
+        rotation_start=start_date,
+        rolling_users=[{user1.pk: user1.public_primary_key}],
+    )
+    data_to_update = {
+        "name": name,
+        "priority_level": 2,
+        "shift_start": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "shift_end": (start_date + timezone.timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "rotation_start": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "until": None,
+        "frequency": None,
+        "interval": None,
+        "by_day": None,
+        "rolling_users": [["fuzz"]],
+    }
+
+    url = reverse("api-internal:oncall_shifts-detail", kwargs={"pk": on_call_shift.public_primary_key})
+    response = client.put(url, data=data_to_update, format="json", **make_user_auth_headers(user1, token))
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == {"rolling_users": {"0": ["User does not exist {'fuzz'}"]}}
 
 
 @pytest.mark.django_db
@@ -605,6 +657,7 @@ def test_update_started_on_call_shift(
         "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.MONDAY],
         "rolling_users": [[user1.public_primary_key]],
         "updated_shift": None,
+        "start_rotation_from_user_index": 0,
     }
 
     assert response.status_code == status.HTTP_200_OK
@@ -746,6 +799,7 @@ def test_update_old_on_call_shift_with_future_version(
         "schedule": schedule.public_primary_key,
         "updated_shift": None,
         "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.MONDAY],
+        "start_rotation_from_user_index": 0,
     }
 
     assert response.status_code == status.HTTP_200_OK
@@ -816,6 +870,7 @@ def test_update_started_on_call_shift_name(
         "schedule": schedule.public_primary_key,
         "updated_shift": None,
         "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.MONDAY],
+        "start_rotation_from_user_index": None,
     }
 
     assert response.status_code == status.HTTP_200_OK
@@ -1187,6 +1242,41 @@ def test_create_on_call_shift_invalid_data_rolling_users(
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.data["rolling_users"][0] == "Cannot set multiple user groups for non-recurrent shifts"
+
+
+@pytest.mark.django_db
+def test_create_on_call_shift_invalid_rolling_users(on_call_shift_internal_api_setup, make_user_auth_headers):
+    token, user1, user2, _, schedule = on_call_shift_internal_api_setup
+    client = APIClient()
+    url = reverse("api-internal:oncall_shifts-list")
+    start_date = timezone.now().replace(microsecond=0, tzinfo=None)
+
+    data = {
+        "name": "Test Shift",
+        "type": CustomOnCallShift.TYPE_ROLLING_USERS_EVENT,
+        "schedule": schedule.public_primary_key,
+        "priority_level": 1,
+        "shift_start": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "shift_end": (start_date + timezone.timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "rotation_start": start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "until": None,
+        "frequency": 1,
+        "interval": 1,
+        "by_day": [
+            CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.MONDAY],
+            CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.FRIDAY],
+        ],
+        "week_start": CustomOnCallShift.ICAL_WEEKDAY_MAP[CustomOnCallShift.MONDAY],
+        "rolling_users": [[user1.public_primary_key], [user2.public_primary_key, "fuzz"]],
+    }
+
+    with patch("apps.schedules.models.CustomOnCallShift.refresh_schedule") as mock_refresh_schedule:
+        response = client.post(url, data, format="json", **make_user_auth_headers(user1, token))
+
+    expected_payload = {"rolling_users": {"1": ["User does not exist {'fuzz'}"]}}
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.json() == expected_payload
+    mock_refresh_schedule.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -1648,7 +1738,7 @@ def test_on_call_shift_preview(
                     "display_name": other_user.username,
                     "pk": other_user.public_primary_key,
                     "email": other_user.email,
-                    "avatar_full": other_user.avatar_full_url,
+                    "avatar_full": other_user.avatar_full_url(organization),
                 },
             ],
             "source": "web",
@@ -1778,7 +1868,7 @@ def test_on_call_shift_preview_without_users(
             "is_override": False,
             "is_empty": True,
             "is_gap": False,
-            "priority_level": None,
+            "priority_level": 0,
             "missing_users": [],
             "users": [],
             "source": "web",
@@ -1978,7 +2068,7 @@ def test_on_call_shift_preview_update(
                 "display_name": other_user.username,
                 "pk": other_user.public_primary_key,
                 "email": other_user.email,
-                "avatar_full": other_user.avatar_full_url,
+                "avatar_full": other_user.avatar_full_url(organization),
             },
         ],
         "source": "web",
@@ -2093,7 +2183,7 @@ def test_on_call_shift_preview_update_not_started_reuse_pk(
                     "display_name": other_user.username,
                     "pk": other_user.public_primary_key,
                     "email": other_user.email,
-                    "avatar_full": other_user.avatar_full_url,
+                    "avatar_full": other_user.avatar_full_url(organization),
                 },
             ],
             "source": "web",

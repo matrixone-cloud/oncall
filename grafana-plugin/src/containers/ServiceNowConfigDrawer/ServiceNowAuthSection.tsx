@@ -1,7 +1,9 @@
 import React, { forwardRef, useImperativeHandle, useState } from 'react';
 
 import { GrafanaTheme2 } from '@grafana/data';
-import { Alert, Button, HorizontalGroup, LoadingPlaceholder, useStyles2 } from '@grafana/ui';
+import { Alert, Button, LoadingPlaceholder, Stack, useStyles2 } from '@grafana/ui';
+import { INTEGRATION_SERVICENOW } from 'helpers/consts';
+import { OmitReadonlyMembers } from 'helpers/types';
 import { observer } from 'mobx-react';
 import { useFormContext } from 'react-hook-form';
 
@@ -11,8 +13,6 @@ import { IntegrationFormFields } from 'containers/IntegrationForm/IntegrationFor
 import { AlertReceiveChannelHelper } from 'models/alert_receive_channel/alert_receive_channel.helpers';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useCurrentIntegration } from 'pages/integration/OutgoingTab/OutgoingTab.hooks';
-import { INTEGRATION_SERVICENOW } from 'utils/consts';
-import { OmitReadonlyMembers } from 'utils/types';
 
 import { getCommonServiceNowConfigStyles } from './ServiceNow.styles';
 import { ServiceNowFormFields } from './ServiceNowStatusSection';
@@ -43,7 +43,7 @@ export const ServiceNowAuthSection = observer(
           />
         </RenderConditionally>
 
-        <HorizontalGroup>
+        <Stack>
           <Button className={''} variant="secondary" onClick={onAuthTest} disabled={isAuthTestRunning}>
             Test Connection
           </Button>
@@ -52,7 +52,7 @@ export const ServiceNowAuthSection = observer(
               <LoadingPlaceholder text="Loading..." className={styles.loader} />
             </RenderConditionally>
           </div>
-        </HorizontalGroup>
+        </Stack>
       </div>
     );
 

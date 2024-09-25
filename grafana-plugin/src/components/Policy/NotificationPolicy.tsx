@@ -2,7 +2,9 @@ import React from 'react';
 
 import { css, cx } from '@emotion/css';
 import { GrafanaTheme2, SelectableValue } from '@grafana/data';
-import { Button, IconButton, Select, Themeable2, withTheme2 } from '@grafana/ui';
+import { Button, IconButton, Select, withTheme2 } from '@grafana/ui';
+import { UserAction } from 'helpers/authorization/authorization';
+import { openWarningNotification } from 'helpers/helpers';
 import { isNumber } from 'lodash';
 import { SortableElement } from 'react-sortable-hoc';
 
@@ -15,14 +17,13 @@ import { ApiSchemas } from 'network/oncall-api/api.types';
 import { AppFeature } from 'state/features';
 import { RootStore } from 'state/rootStore';
 import { SelectOption } from 'state/types';
-import { UserAction } from 'utils/authorization/authorization';
-import { openWarningNotification } from 'utils/utils';
 
 import { DragHandle } from './DragHandle';
 import { POLICY_DURATION_LIST_MINUTES, POLICY_DURATION_LIST_SECONDS } from './Policy.consts';
 import { PolicyNote } from './PolicyNote';
 
-export interface NotificationPolicyProps extends Themeable2 {
+export interface NotificationPolicyProps {
+  theme: GrafanaTheme2;
   data: NotificationPolicyType;
   slackTeamIdentity?: {
     general_log_channel_pk: Channel['id'];
@@ -45,29 +46,19 @@ export interface NotificationPolicyProps extends Themeable2 {
   isDisabled: boolean;
 }
 
-export class NotificationPolicy extends React.Component<NotificationPolicyProps, any> {
-  private styles: ReturnType<typeof getStyles>;
-
+export class _NotificationPolicy extends React.Component<NotificationPolicyProps, any> {
   constructor(props: NotificationPolicyProps) {
     super(props);
-    this.styles = getStyles(this.props.theme);
-  }
-
-  componentDidUpdate(prevProps: Readonly<NotificationPolicyProps>): void {
-    if (prevProps.theme !== this.props.theme) {
-      // fetch new styles whenever the theme changes
-      this.styles = getStyles(this.props.theme);
-      this.forceUpdate();
-    }
   }
 
   render() {
-    const { data, notificationChoices, number, color, userAction, isDisabled } = this.props;
+    const { data, notificationChoices, number, color, userAction, isDisabled, theme } = this.props;
     const { id, step } = data;
+    const styles = getStyles(theme);
 
     return (
-      <Timeline.Item className={cx(this.styles.root)} number={number} backgroundHexNumber={color}>
-        <div className={cx(this.styles.step)}>
+      <Timeline.Item className={cx(styles.root)} number={number} backgroundHexNumber={color}>
+        <div className={cx(styles.step)}>
           {!isDisabled && (
             <WithPermissionControlTooltip userAction={userAction}>
               <DragHandle />
@@ -75,7 +66,7 @@ export class NotificationPolicy extends React.Component<NotificationPolicyProps,
           )}
           <WithPermissionControlTooltip userAction={userAction}>
             <Select
-              className={cx(this.styles.select, this.styles.control)}
+              className={cx(styles.select, styles.control)}
               onChange={this._getOnChangeHandler('step')}
               value={step}
               options={notificationChoices.map((option: any) => ({ label: option.display_name, value: option.value }))}
@@ -86,7 +77,7 @@ export class NotificationPolicy extends React.Component<NotificationPolicyProps,
           <WithPermissionControlTooltip userAction={userAction}>
             <IconButton
               aria-label="Remove"
-              className={cx(this.styles.control)}
+              className={cx(styles.control)}
               name="trash-alt"
               onClick={this._getDeleteClickHandler(id)}
               variant="secondary"
@@ -185,8 +176,10 @@ export class NotificationPolicy extends React.Component<NotificationPolicyProps,
   }
 
   private _renderWaitDelays(disabled: boolean) {
-    const { data, userAction } = this.props;
+    const { data, userAction, theme } = this.props;
     const { wait_delay } = data;
+
+    const styles = getStyles(theme);
 
     const optionsList = [...POLICY_DURATION_LIST_MINUTES];
 
@@ -200,11 +193,10 @@ export class NotificationPolicy extends React.Component<NotificationPolicyProps,
 
     return (
       <WithPermissionControlTooltip userAction={userAction}>
-        <div className={this.styles.container}>
+        <div className={styles.container}>
           <Select
             key="wait-delay"
-            placeholder="Wait Delay"
-            className={cx(this.styles.delay, this.styles.control)}
+            className={cx(styles.delay, styles.control)}
             value={wait_delay ? optionValue : undefined}
             disabled={disabled}
             onChange={(option: SelectableValue) => this._getOnChangeHandler('wait_delay')({ value: option.value * 60 })}
@@ -235,15 +227,17 @@ export class NotificationPolicy extends React.Component<NotificationPolicyProps,
   }
 
   private _renderNotifyBy(disabled: boolean) {
-    const { data, notifyByOptions = [], userAction } = this.props;
+    const { data, notifyByOptions = [], theme, userAction } = this.props;
     const { notify_by } = data;
+
+    const styles = getStyles(theme);
 
     return (
       <WithPermissionControlTooltip userAction={userAction}>
         <Select
           key="notify_by"
           placeholder="Notify by"
-          className={cx(this.styles.select, this.styles.control)}
+          className={cx(styles.select, styles.control)}
           // @ts-ignore
           value={notify_by}
           disabled={disabled}
@@ -342,4 +336,4 @@ const getStyles = (_theme: GrafanaTheme2) => {
   };
 };
 
-export default SortableElement(withTheme2(NotificationPolicy));
+export const NotificationPolicy = SortableElement(withTheme2(_NotificationPolicy));

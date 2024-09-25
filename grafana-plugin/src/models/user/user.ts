@@ -1,5 +1,7 @@
 import { config } from '@grafana/runtime';
 import dayjs from 'dayjs';
+import { isUserActionAllowed, UserActions } from 'helpers/authorization/authorization';
+import { AutoLoadingState } from 'helpers/decorators';
 import { get } from 'lodash-es';
 import { action, computed, runInAction, makeAutoObservable } from 'mobx';
 
@@ -10,8 +12,6 @@ import { ApiSchemas } from 'network/oncall-api/api.types';
 import { onCallApi } from 'network/oncall-api/http-client';
 import { move } from 'state/helpers';
 import { RootStore } from 'state/rootStore';
-import { isUserActionAllowed, UserActions } from 'utils/authorization/authorization';
-import { AutoLoadingState } from 'utils/decorators';
 
 import { UserHelper } from './user.helpers';
 
@@ -36,7 +36,11 @@ export class UserStore {
     this.rootStore = rootStore;
   }
 
-  async fetchItems(f: any = { searchTerm: '' }, page = 1, invalidateFn?: () => boolean): Promise<any> {
+  async fetchItems(
+    f: { search: ''; type?: string; used?: boolean; mine?: boolean } | string = { search: '' },
+    page = 1,
+    invalidateFn?: () => boolean
+  ): Promise<any> {
     const response = await UserHelper.search(f, page);
 
     if (invalidateFn && invalidateFn()) {
@@ -294,10 +298,10 @@ export class UserStore {
   }
 
   @computed
-  get currentUser() {
+  get currentUser(): undefined | ApiSchemas['CurrentUser'] {
     if (!this.currentUserPk) {
       return undefined;
     }
-    return this.items[this.currentUserPk];
+    return this.items[this.currentUserPk] as ApiSchemas['CurrentUser'];
   }
 }

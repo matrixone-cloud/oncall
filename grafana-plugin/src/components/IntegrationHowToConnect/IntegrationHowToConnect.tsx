@@ -1,23 +1,24 @@
 import React from 'react';
 
-import { HorizontalGroup, Icon, VerticalGroup } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { Icon, Stack, useStyles2 } from '@grafana/ui';
+import { StackSize } from 'helpers/consts';
 import { noop } from 'lodash-es';
+import { getUtilStyles } from 'styles/utils.styles';
 
 import { IntegrationInputField } from 'components/IntegrationInputField/IntegrationInputField';
 import { IntegrationBlock } from 'components/Integrations/IntegrationBlock';
 import { IntegrationTag } from 'components/Integrations/IntegrationTag';
 import { Text } from 'components/Text/Text';
 import { ApiSchemas } from 'network/oncall-api/api.types';
-import styles from 'pages/integration/Integration.module.scss';
+import { getIntegrationStyles } from 'pages/integration/Integration.styles';
 import { useStore } from 'state/useStore';
-
-const cx = cn.bind(styles);
 
 export const IntegrationHowToConnect: React.FC<{ id: ApiSchemas['AlertReceiveChannel']['id'] }> = ({ id }) => {
   const { alertReceiveChannelStore } = useStore();
   const alertReceiveChannelCounter = alertReceiveChannelStore.counters[id];
   const hasAlerts = !!alertReceiveChannelCounter?.alerts_count;
+  const styles = useStyles2(getIntegrationStyles);
+  const utilStyles = useStyles2(getUtilStyles);
 
   const item = alertReceiveChannelStore.items[id];
   const url = item?.integration_url || item?.inbound_email;
@@ -38,7 +39,7 @@ export const IntegrationHowToConnect: React.FC<{ id: ApiSchemas['AlertReceiveCha
       noContent={hasAlerts}
       toggle={noop}
       heading={
-        <div className={cx('how-to-connect__container')}>
+        <div className={styles.howToConnectContainer}>
           <IntegrationTag>{howToConnectTagName(item?.integration)}</IntegrationTag>
           {item?.integration === 'direct_paging' ? (
             <>
@@ -47,13 +48,13 @@ export const IntegrationHowToConnect: React.FC<{ id: ApiSchemas['AlertReceiveCha
                 href="https://grafana.com/docs/oncall/latest/integrations/manual"
                 target="_blank"
                 rel="noreferrer"
-                className={cx('u-pull-right')}
+                className={utilStyles.pullRight}
               >
                 <Text type="link" size="small">
-                  <HorizontalGroup>
+                  <Stack>
                     How it works
                     <Icon name="external-link-alt" />
-                  </HorizontalGroup>
+                  </Stack>
                 </Text>
               </a>
             </>
@@ -63,7 +64,7 @@ export const IntegrationHowToConnect: React.FC<{ id: ApiSchemas['AlertReceiveCha
                 <IntegrationInputField
                   value={url}
                   isMasked
-                  className={cx('integration__input-field')}
+                  className={styles.integrationInputField}
                   showExternal={!!item?.integration_url}
                 />
               )}
@@ -71,13 +72,13 @@ export const IntegrationHowToConnect: React.FC<{ id: ApiSchemas['AlertReceiveCha
                 href="https://grafana.com/docs/oncall/latest/integrations/"
                 target="_blank"
                 rel="noreferrer"
-                className={cx('u-pull-right')}
+                className={utilStyles.pullRight}
               >
                 <Text type="link" size="small">
-                  <HorizontalGroup>
+                  <Stack>
                     How to connect
                     <Icon name="external-link-alt" />
-                  </HorizontalGroup>
+                  </Stack>
                 </Text>
               </a>
             </>
@@ -98,14 +99,14 @@ export const IntegrationHowToConnect: React.FC<{ id: ApiSchemas['AlertReceiveCha
     };
 
     return (
-      <VerticalGroup justify={'flex-start'} spacing={'xs'}>
+      <Stack direction="column" justifyContent={'flex-start'} gap={StackSize.xs}>
         {!hasAlerts && (
-          <HorizontalGroup spacing={'xs'}>
-            <Icon name="fa fa-spinner" size="md" className={cx('loadingPlaceholder')} />
+          <Stack gap={StackSize.xs}>
+            <Icon name="fa fa-spinner" size="md" className={utilStyles.loadingPlaceholder} />
             <Text type={'primary'}>No alerts yet</Text> {callToAction()}
-          </HorizontalGroup>
+          </Stack>
         )}
-      </VerticalGroup>
+      </Stack>
     );
   }
 };

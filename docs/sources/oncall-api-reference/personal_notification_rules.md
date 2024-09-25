@@ -1,7 +1,13 @@
 ---
 canonical: https://grafana.com/docs/oncall/latest/oncall-api-reference/personal_notification_rules/
 title: Personal notification rules HTTP API
-weight: 800
+weight: 0
+refs:
+  pagination:
+    - pattern: /docs/oncall/
+      destination: /docs/oncall/<ONCALL_VERSION>/oncall-api-reference/#pagination
+    - pattern: /docs/grafana-cloud/
+      destination: /docs/grafana-cloud/alerting-and-irm/oncall/oncall-api-reference/#pagination
 ---
 
 # Personal notification rules HTTP API
@@ -35,8 +41,8 @@ The above command returns JSON structured in the following way:
 | ----------- | :------: | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `user_id`   |   Yes    | User ID                                                                                                                                                                                                                                                                                             |
 | `position`  | Optional | Personal notification rules execute one after another starting from `position=0`. `Position=-1` will put the escalation policy to the end of the list. A new escalation policy created with a position of an existing escalation policy will move the old one (and all following) down on the list. |
-| `type`      |   Yes    | One of: `wait`, `notify_by_slack`, `notify_by_sms`, `notify_by_phone_call`, `notify_by_telegram`, `notify_by_email`.                                                                                                                                                                                |
-| `duration`  | Optional | A time in secs when type `wait` is chosen for `type`.                                                                                                                                                                                                                                               |
+| `type`      |   Yes    | One of: `wait`, `notify_by_slack`, `notify_by_sms`, `notify_by_phone_call`, `notify_by_telegram`, `notify_by_email`, `notify_by_mobile_app`, `notify_by_mobile_app_critical`, or `notify_by_msteams` (**NOTE** `notify_by_msteams` is only available on Grafana Cloud).                                                                                                                                                                                |
+| `duration`  | Optional | A time in seconds to wait (when `type=wait`). Can be one of 60, 300, 900, 1800, or 3600.                                                                                                                                                                                                                                               |
 | `important` | Optional | Boolean value indicates if a rule is "important". Default is `false`.                                                                                                                                                                                                                               |
 
 **HTTP request**
@@ -121,6 +127,8 @@ The above command returns JSON structured in the following ways:
   "total_pages": 1
 }
 ```
+
+> **Note**: The response is [paginated](ref:pagination). You may need to make multiple requests to get all records.
 
 The following available filter parameters should be provided as `GET` arguments:
 

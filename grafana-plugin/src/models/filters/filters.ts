@@ -1,12 +1,12 @@
+import { LocationHelper } from 'helpers/LocationHelper';
+import { PAGE } from 'helpers/consts';
+import { getItem, setItem } from 'helpers/localStorage';
 import { action, observable, makeObservable, runInAction } from 'mobx';
 
 import { BaseStore } from 'models/base_store';
 import { LabelKeyValue } from 'models/label/label.types';
 import { makeRequest } from 'network/network';
 import { RootStore } from 'state/rootStore';
-import { LocationHelper } from 'utils/LocationHelper';
-import { PAGE } from 'utils/consts';
-import { getItem, setItem } from 'utils/localStorage';
 
 import { getApiPathByPage } from './filters.helpers';
 import { FilterOption, FiltersValues } from './filters.types';
@@ -57,11 +57,6 @@ export class FiltersStore extends BaseStore {
   @action.bound
   public async updateOptionsForPage(page: string) {
     const result = await makeRequest(`/${getApiPathByPage(page)}/filters/`, {});
-
-    const allowFreeSearch = result.some((filter: FilterOption) => filter.name === 'search');
-    if (!allowFreeSearch) {
-      result.unshift({ name: 'search', type: 'search' });
-    }
 
     runInAction(() => {
       this.options = {

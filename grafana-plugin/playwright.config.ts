@@ -1,15 +1,10 @@
 import { PlaywrightTestProject, defineConfig, devices } from '@playwright/test';
 
 import path from 'path';
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-require('dotenv').config({ path: path.resolve(process.cwd(), 'e2e-tests/.env') });
 
-export const VIEWER_USER_STORAGE_STATE = path.join(__dirname, 'e2e-tests/.auth/viewer.json');
-export const EDITOR_USER_STORAGE_STATE = path.join(__dirname, 'e2e-tests/.auth/editor.json');
-export const ADMIN_USER_STORAGE_STATE = path.join(__dirname, 'e2e-tests/.auth/admin.json');
+export const VIEWER_USER_STORAGE_STATE = path.join(process.cwd(), 'e2e-tests/.auth/viewer.json');
+export const EDITOR_USER_STORAGE_STATE = path.join(process.cwd(), 'e2e-tests/.auth/editor.json');
+export const ADMIN_USER_STORAGE_STATE = path.join(process.cwd(), 'e2e-tests/.auth/admin.json');
 
 const IS_CI = !!process.env.CI;
 const BROWSERS = process.env.BROWSERS || 'chromium';
@@ -27,7 +22,16 @@ export default defineConfig({
   /* Maximum time all the tests can run for. */
   globalTimeout: 20 * 60 * 1_000, // 20 minutes
 
-  reporter: [['html', { open: IS_CI ? 'never' : 'always' }]],
+  reporter: [
+    [
+      'html',
+      {
+        open: IS_CI ? 'never' : 'always',
+        port: 31000, // explicitly specify a port for k8s port forwarding to avoid clashes with Incident and IRM
+      },
+    ],
+    ['list', { printSteps: true }],
+  ],
 
   /* Maximum time one test can run for. */
   timeout: 60_000,
@@ -49,9 +53,7 @@ export default defineConfig({
    * to flaky tests.. let's allow 1 retry per test
    */
   retries: 1,
-  workers: '25%', // 25% of logical CPU cores, e.g. for 16 CPU cores it will use 4 workers
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  // reporter: 'html',
+  workers: 4,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */

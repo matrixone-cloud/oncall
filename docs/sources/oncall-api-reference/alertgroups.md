@@ -1,7 +1,13 @@
 ---
 canonical: https://grafana.com/docs/oncall/latest/oncall-api-reference/alertgroups/
 title: Alert groups HTTP API
-weight: 400
+weight: 0
+refs:
+  pagination:
+    - pattern: /docs/oncall/
+      destination: /docs/oncall/<ONCALL_VERSION>/oncall-api-reference/#pagination
+    - pattern: /docs/grafana-cloud/
+      destination: /docs/grafana-cloud/alerting-and-irm/oncall/oncall-api-reference/#pagination
 ---
 
 # Alert groups HTTP API
@@ -48,12 +54,17 @@ The above command returns JSON structured in the following way:
 }
 ```
 
+> **Note**: The response is [paginated](ref:pagination). You may need to make multiple requests to get all records.
+
 These available filter parameters should be provided as `GET` arguments:
 
-- `id`
-- `route_id`
-- `integration_id`
-- `state`
+- `id` (Exact match, alert group ID)
+- `route_id` (Exact match, route ID)
+- `integration_id` (Exact match, integration ID)
+- `label` (Matching labels, can be passed multiple times; expected format: `key1:value1`)
+- `team_id` (Exact match, team ID)
+- `started_at` (A "{start}_{end}" ISO 8601 timestamp range; expected format: `%Y-%m-%dT%H:%M:%S_%Y-%m-%dT%H:%M:%S`)
+- `state` (Possible values: `new`, `acknowledged`, `resolved` or `silenced`)
 
 **HTTP request**
 
@@ -118,6 +129,38 @@ curl "{{API_URL}}/api/v1/alert_groups/I68T24C13IFW1/unresolve" \
 **HTTP request**
 
 `POST {{API_URL}}/api/v1/alert_groups/<ALERT_GROUP_ID>/unresolve`
+
+## Silence an alert group
+
+```shell
+curl "{{API_URL}}/api/v1/alert_groups/I68T24C13IFW1/silence" \
+  --request POST \
+  --header "Authorization: meowmeowmeow" \
+  --header "Content-Type: application/json" \
+  --data '{
+      "delay": 10800
+  }'
+```
+
+**HTTP request**
+
+`POST {{API_URL}}/api/v1/alert_groups/<ALERT_GROUP_ID>/silence`
+
+| Parameter | Required | Description                                                                                                                                                                                                                                                                                                                                             |
+|-----------|:--------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `delay`    |    Yes    | The duration of silence in seconds, `-1` for silencing the alert forever |
+
+## Unsilence an alert group
+
+```shell
+curl "{{API_URL}}/api/v1/alert_groups/I68T24C13IFW1/unsilence" \
+  --request POST \
+  --header "Authorization: meowmeowmeow"
+```
+
+**HTTP request**
+
+`POST {{API_URL}}/api/v1/alert_groups/<ALERT_GROUP_ID>/unsilence`
 
 ## Delete an alert group
 

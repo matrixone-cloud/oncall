@@ -4,7 +4,6 @@ import { SelectableValue } from '@grafana/data';
 import {
   Button,
   Field,
-  HorizontalGroup,
   Icon,
   Input,
   Label,
@@ -14,13 +13,23 @@ import {
   Switch,
   TextArea,
   Tooltip,
-  VerticalGroup,
+  Stack,
   useStyles2,
 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import {
+  PLUGIN_ROOT,
+  generateAssignToTeamInputDescription,
+  DOCS_ROOT,
+  INTEGRATION_SERVICENOW,
+  StackSize,
+} from 'helpers/consts';
+import { useIsLoading } from 'helpers/hooks';
+import { validateURL } from 'helpers/string';
+import { OmitReadonlyMembers } from 'helpers/types';
 import { observer } from 'mobx-react';
-import { parseUrl } from 'query-string';
 import { Controller, useForm, useFormContext, FormProvider } from 'react-hook-form';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import { HowTheIntegrationWorks } from 'components/HowTheIntegrationWorks/HowTheIntegrationWorks';
 import { PluginLink } from 'components/PluginLink/PluginLink';
@@ -37,10 +46,6 @@ import { ApiSchemas } from 'network/oncall-api/api.types';
 import { IntegrationHelper, getIsBidirectionalIntegration } from 'pages/integration/Integration.helper';
 import { AppFeature } from 'state/features';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { PLUGIN_ROOT, generateAssignToTeamInputDescription, DOCS_ROOT, INTEGRATION_SERVICENOW } from 'utils/consts';
-import { useIsLoading } from 'utils/hooks';
-import { OmitReadonlyMembers } from 'utils/types';
 
 import { prepareForEdit } from './IntegrationForm.helpers';
 import { getIntegrationFormStyles } from './IntegrationForm.styles';
@@ -94,10 +99,16 @@ export const IntegrationForm = observer(
     onBackClick,
   }: IntegrationFormProps) => {
     const store = useStore();
-    const history = useHistory();
+    const navigate = useNavigate();
     const styles = useStyles2(getIntegrationFormStyles);
     const isNew = id === 'new';
-    const { userStore, grafanaTeamStore, alertReceiveChannelStore } = store;
+    const {
+      userStore,
+      grafanaTeamStore,
+      // dereferencing items is needed to rerender GSelect
+      grafanaTeamStore: { items: grafanaTeamItems },
+      alertReceiveChannelStore,
+    } = store;
 
     const data: Partial<ApiSchemas['AlertReceiveChannel']> = isNew
       ? {
@@ -234,7 +245,7 @@ export const IntegrationForm = observer(
                   placeholder="Assign to team"
                   {...field}
                   {...{
-                    items: grafanaTeamStore.items,
+                    items: grafanaTeamItems,
                     fetchItemsFn: grafanaTeamStore.updateItems,
                     fetchItemFn: grafanaTeamStore.fetchItemById,
                     getSearchResult: grafanaTeamStore.getSearchResult,
@@ -290,17 +301,17 @@ export const IntegrationForm = observer(
 
           <RenderConditionally shouldRender={isServiceNow && isNew}>
             <div className={styles.serviceNowHeading}>
-              <HorizontalGroup>
+              <Stack>
                 <Text type="primary">ServiceNow configuration</Text>
-              </HorizontalGroup>
-              <HorizontalGroup>
+              </Stack>
+              <Stack>
                 <Text type={'primary'} size={'small'}>
                   Fill in ServiceNow credentials to be used by Grafana OnCall.{' '}
                   <a href={`${DOCS_ROOT}/integrations/servicenow/`} target="_blank" rel="noreferrer">
                     <Text type="link">Read setup guide</Text>
                   </a>
                 </Text>
-              </HorizontalGroup>
+              </Stack>
             </div>
 
             <Controller
@@ -376,7 +387,7 @@ export const IntegrationForm = observer(
           </RenderConditionally>
 
           <div>
-            <HorizontalGroup justify="flex-end">
+            <Stack justifyContent="flex-end">
               {id === 'new' ? (
                 <Button variant="secondary" onClick={onBackClick}>
                   Back
@@ -390,7 +401,7 @@ export const IntegrationForm = observer(
               <WithPermissionControlTooltip userAction={UserActions.IntegrationsWrite}>
                 {renderUpdateIntegrationButton(id)}
               </WithPermissionControlTooltip>
-            </HorizontalGroup>
+            </Stack>
           </div>
         </form>
       </FormProvider>
@@ -404,10 +415,6 @@ export const IntegrationForm = observer(
           {isLoading ? <LoadingPlaceholder text="Loading..." className={styles.loader} /> : buttonCopy}
         </Button>
       );
-    }
-
-    function validateURL(urlFieldValue: string): string | boolean {
-      return !parseUrl(urlFieldValue) ? 'Instance URL is invalid' : true;
     }
 
     async function onFormSubmit(formData: IntegrationFormFields): Promise<void> {
@@ -451,7 +458,8 @@ export const IntegrationForm = observer(
       async function createNewIntegration(): Promise<void | ApiSchemas['AlertReceiveChannelCreate']> {
         const response = await alertReceiveChannelStore.create({ data, skipErrorHandling: true });
         const pushHistory = (id: ApiSchemas['AlertReceiveChannel']['id']) =>
-          history.push(`${PLUGIN_ROOT}/integrations/${id}`);
+          navigate(`${PLUGIN_ROOT}/integrations/${id}`);
+
         if (!response) {
           return;
         }
@@ -540,13 +548,13 @@ const GrafanaContactPoint = observer(
 
     return (
       <div className={styles.extraFields}>
-        <VerticalGroup spacing="md">
-          <HorizontalGroup spacing="xs" align="center">
+        <Stack direction="column" gap={StackSize.md}>
+          <Stack gap={StackSize.xs} alignItems="center">
             <Text type="primary" size="small">
               Grafana Alerting Contact point
             </Text>
             <Icon name="info-circle" />
-          </HorizontalGroup>
+          </Stack>
 
           <div className={styles.extraFieldsRadio}>
             <Controller
@@ -622,7 +630,7 @@ const GrafanaContactPoint = observer(
               )}
             />
           </div>
-        </VerticalGroup>
+        </Stack>
       </div>
     );
 
@@ -648,7 +656,7 @@ const GrafanaContactPoint = observer(
       // filter contact points for current alert manager
       const contactPointsForCurrentOption = allContactPoints
         .find((opt) => opt.uid === option.value)
-        .contact_points?.map((cp) => ({ value: cp, label: cp }));
+        ?.contact_points?.map((cp) => ({ value: cp, label: cp }));
 
       const newState: Partial<GrafanaContactPointState> = {
         selectedAlertManagerOption: option.value,

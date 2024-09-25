@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 
 import { css } from '@emotion/css';
-import { Button, HorizontalGroup, Switch, VerticalGroup, useStyles2 } from '@grafana/ui';
+import { Button, Switch, Stack, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { DOCS_ROOT, StackSize } from 'helpers/consts';
 import { observer } from 'mobx-react';
 import { getUtilStyles } from 'styles/utils.styles';
 
@@ -15,11 +17,14 @@ import { Schedule } from 'models/schedule/schedule.types';
 import { UserHelper } from 'models/user/user.helpers';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { DOCS_ROOT } from 'utils/consts';
 
 const GoogleCalendar: React.FC<{ id: ApiSchemas['User']['pk'] }> = observer(({ id }) => {
-  const { userStore, scheduleStore } = useStore();
+  const {
+    userStore,
+    scheduleStore,
+    // dereferencing items is needed to rerender GSelect
+    scheduleStore: { items: scheduleItems },
+  } = useStore();
 
   const utils = useStyles2(getUtilStyles);
 
@@ -52,10 +57,10 @@ const GoogleCalendar: React.FC<{ id: ApiSchemas['User']['pk'] }> = observer(({ i
 
   return (
     <Block bordered className={utils.width100}>
-      <VerticalGroup spacing="lg">
+      <Stack direction="column" gap={StackSize.lg}>
         {user.has_google_oauth2_connected ? (
-          <VerticalGroup>
-            <HorizontalGroup justify="space-between" spacing="lg" align="flex-start">
+          <Stack direction="column">
+            <Stack justifyContent="space-between" gap={StackSize.lg} alignItems="flex-start">
               <Heading connected />
               <WithPermissionControlTooltip userAction={UserActions.UserSettingsWrite}>
                 <WithConfirm title="Are you sure to disconnect your Google account?" confirmText="Disconnect">
@@ -64,26 +69,26 @@ const GoogleCalendar: React.FC<{ id: ApiSchemas['User']['pk'] }> = observer(({ i
                   </Button>
                 </WithConfirm>
               </WithPermissionControlTooltip>
-            </HorizontalGroup>
-          </VerticalGroup>
+            </Stack>
+          </Stack>
         ) : (
-          <HorizontalGroup justify="space-between" spacing="lg" align="flex-start">
+          <Stack justifyContent="space-between" gap={StackSize.lg} alignItems="flex-start">
             <Heading connected={false} />
             <WithPermissionControlTooltip userAction={UserActions.UserSettingsWrite}>
               <Button variant="primary" onClick={UserHelper.handleConnectGoogle}>
                 Connect
               </Button>
             </WithPermissionControlTooltip>
-          </HorizontalGroup>
+          </Stack>
         )}
 
         {user.has_google_oauth2_connected && (
-          <VerticalGroup>
+          <Stack direction="column">
             <WithPermissionControlTooltip userAction={UserActions.UserSettingsWrite}>
-              <HorizontalGroup spacing="md" align="center">
+              <Stack gap={StackSize.md} alignItems="center">
                 <Switch value={showSchedulesDropdown} onChange={handleShowSchedulesDropdownChange} />
                 <Text type="secondary">Specify the schedules to sync with Google calendar</Text>
-              </HorizontalGroup>
+              </Stack>
             </WithPermissionControlTooltip>
             {showSchedulesDropdown && (
               <div className={utils.width100}>
@@ -92,7 +97,7 @@ const GoogleCalendar: React.FC<{ id: ApiSchemas['User']['pk'] }> = observer(({ i
                     isMulti
                     allowClear
                     disabled={false}
-                    items={scheduleStore.items}
+                    items={scheduleItems}
                     fetchItemsFn={scheduleStore.updateItems}
                     fetchItemFn={scheduleStore.updateItem}
                     getSearchResult={scheduleStore.getSearchResult}
@@ -105,9 +110,9 @@ const GoogleCalendar: React.FC<{ id: ApiSchemas['User']['pk'] }> = observer(({ i
                 </WithPermissionControlTooltip>
               </div>
             )}
-          </VerticalGroup>
+          </Stack>
         )}
-      </VerticalGroup>
+      </Stack>
     </Block>
   );
 });
@@ -122,12 +127,12 @@ const Heading: React.FC<{ connected: boolean }> = ({ connected }) => {
   const styles = useStyles2(getStyles);
 
   return (
-    <HorizontalGroup spacing="md" align="flex-start">
+    <Stack gap={StackSize.md} alignItems="flex-start">
       <div className={styles.icon}>
         <GoogleCalendarLogo width={32} height={32} />
       </div>
-      <VerticalGroup spacing="md">
-        <VerticalGroup spacing="none">
+      <Stack direction="column" gap={StackSize.md}>
+        <Stack direction="column" gap={StackSize.none}>
           <Text.Title level={5}>
             {connected ? 'Google calendar is connected' : 'Connect your Google Calendar'}
           </Text.Title>
@@ -155,7 +160,7 @@ const Heading: React.FC<{ connected: boolean }> = ({ connected }) => {
               </a>
             </Text>
           )}
-        </VerticalGroup>
+        </Stack>
         {!connected && (
           <Text type="secondary">
             Grafana OnCall's use and transfer to any other app of information received from Google APIs will adhere
@@ -173,8 +178,8 @@ const Heading: React.FC<{ connected: boolean }> = ({ connected }) => {
             , including the Limited Use requirements.
           </Text>
         )}
-      </VerticalGroup>
-    </HorizontalGroup>
+      </Stack>
+    </Stack>
   );
 };
 

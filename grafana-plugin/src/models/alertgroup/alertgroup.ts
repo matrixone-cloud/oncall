@@ -1,3 +1,6 @@
+import { LocationHelper } from 'helpers/LocationHelper';
+import { GENERIC_ERROR, PAGE, PROCESSING_REQUEST_ERROR } from 'helpers/consts';
+import { AutoLoadingState, WithGlobalNotification } from 'helpers/decorators';
 import { runInAction, makeAutoObservable } from 'mobx';
 import qs from 'query-string';
 
@@ -8,9 +11,6 @@ import { ApiSchemas } from 'network/oncall-api/api.types';
 import { onCallApi } from 'network/oncall-api/http-client';
 import { RootStore } from 'state/rootStore';
 import { SelectOption } from 'state/types';
-import { LocationHelper } from 'utils/LocationHelper';
-import { GENERIC_ERROR, PAGE } from 'utils/consts';
-import { AutoLoadingState, WithGlobalNotification } from 'utils/decorators';
 
 import { AlertGroupHelper } from './alertgroup.helpers';
 import { AlertGroupColumn, AlertAction, IncidentStatus } from './alertgroup.types';
@@ -138,7 +138,7 @@ export class AlertGroupStore {
   @AutoLoadingState(ActionKey.REMOVE_COLUMN_FROM_ALERT_GROUP)
   @WithGlobalNotification({
     success: 'Column has been removed from the list.',
-    failure: 'There was an error processing your request. Please try again',
+    failure: PROCESSING_REQUEST_ERROR,
   })
   async removeTableColumn(
     columnToBeRemoved: AlertGroupColumn,
@@ -174,6 +174,7 @@ export class AlertGroupStore {
     this.liveUpdatesPaused = value;
   }
 
+  @WithGlobalNotification({ failure: PROCESSING_REQUEST_ERROR })
   @AutoLoadingState(ActionKey.UPDATE_FILTERS_AND_FETCH_INCIDENTS)
   async updateIncidentFiltersAndRefetchIncidentsAndStats(params: any, keepCursor = false) {
     if (!keepCursor) {

@@ -1,20 +1,13 @@
 import React, { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react';
 
-import {
-  Button,
-  ConfirmModal,
-  ConfirmModalProps,
-  Drawer,
-  HorizontalGroup,
-  Input,
-  Tab,
-  TabsBar,
-  VerticalGroup,
-} from '@grafana/ui';
-import cn from 'classnames/bind';
+import { css, cx } from '@emotion/css';
+import { Button, ConfirmModal, ConfirmModalProps, Drawer, Input, Tab, TabsBar, Stack, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { PLUGIN_ROOT } from 'helpers/consts';
+import { KeyValuePair } from 'helpers/helpers';
 import { observer } from 'mobx-react';
 import { FormProvider, useForm, useFormContext } from 'react-hook-form';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom-v5-compat';
 
 import { Text } from 'components/Text/Text';
 import { OutgoingWebhookStatus } from 'containers/OutgoingWebhookStatus/OutgoingWebhookStatus';
@@ -25,17 +18,10 @@ import { ApiSchemas } from 'network/oncall-api/api.types';
 import { WebhookFormActionType } from 'pages/outgoing_webhooks/OutgoingWebhooks.types';
 import { AppFeature } from 'state/features';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { PLUGIN_ROOT } from 'utils/consts';
-import { KeyValuePair } from 'utils/utils';
 
 import { TemplateParams, WebhookFormFieldName } from './OutgoingWebhookForm.types';
 import { OutgoingWebhookFormFields } from './OutgoingWebhookFormFields';
 import { WebhookPresetBlocks } from './WebhookPresetBlocks';
-
-import styles from './OutgoingWebhookForm.module.css';
-
-const cx = cn.bind(styles);
 
 interface OutgoingWebhookFormProps {
   id: ApiSchemas['Webhook']['id'] | 'new';
@@ -77,6 +63,10 @@ function prepareForSave(rawData: Partial<ApiSchemas['Webhook']>, selectedPreset:
   selectedPreset?.controlled_fields.forEach((field) => {
     delete data[field];
   });
+
+  if (data.forward_all) {
+    data.data = null;
+  }
 
   return data;
 }
@@ -198,6 +188,7 @@ const Presets = (props: PresetsProps) => {
   const { onHide, onSelect } = props;
 
   const [filterValue, setFilterValue] = useState('');
+  const styles = useStyles2(getWebhookFormStyles);
 
   const { outgoingWebhookStore } = useStore();
 
@@ -207,8 +198,8 @@ const Presets = (props: PresetsProps) => {
 
   return (
     <Drawer scrollableContent title="New Outgoing Webhook" onClose={onHide} closeOnMaskClick={false} width="640px">
-      <div className={cx('content')}>
-        <VerticalGroup>
+      <div className={styles.content}>
+        <Stack direction="column">
           <Text type="secondary">
             Outgoing webhooks can send alert data to other systems. They can be triggered by various conditions and can
             use templates to transform data to fit the recipient system. Presets listed below provide a starting point
@@ -216,7 +207,7 @@ const Presets = (props: PresetsProps) => {
           </Text>
 
           {presets.length > 8 && (
-            <div className={cx('search-integration')}>
+            <div className={styles.searchIntegration}>
               <Input
                 autoFocus
                 value={filterValue}
@@ -227,7 +218,7 @@ const Presets = (props: PresetsProps) => {
           )}
 
           <WebhookPresetBlocks presets={presets} onBlockClick={onSelect} />
-        </VerticalGroup>
+        </Stack>
       </div>
     </Drawer>
   );
@@ -247,21 +238,26 @@ const NewWebhook = (props: NewWebhookProps) => {
   const { data, preset, onHide, action, onBack, onTemplateEditClick, onSubmit } = props;
 
   const { hasFeature } = useStore();
+  const styles = useStyles2(getWebhookFormStyles);
 
   const { handleSubmit } = useFormContext();
 
   return (
     <Drawer scrollableContent title={'New Outgoing Webhook'} onClose={onHide} closeOnMaskClick={false}>
-      <div className="webhooks__drawerContent">
-        <div className={cx('content')}>
-          <form id="OutgoingWebhook" onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+      <div className={styles.webhooksDrawerContent}>
+        <div className={styles.content}>
+          <form id="OutgoingWebhook" onSubmit={handleSubmit(onSubmit)}>
             <OutgoingWebhookFormFields
               preset={preset}
               hasLabelsFeature={hasFeature(AppFeature.Labels)}
               onTemplateEditClick={onTemplateEditClick}
             />
-            <div className={cx('buttons')}>
-              <HorizontalGroup justify="flex-end">
+            <div
+              className={css`
+                padding-bottom: 24px;
+              `}
+            >
+              <Stack justifyContent="flex-end">
                 {action === WebhookFormActionType.NEW ? (
                   <Button variant="secondary" onClick={onBack}>
                     Back
@@ -276,7 +272,7 @@ const NewWebhook = (props: NewWebhookProps) => {
                     Create
                   </Button>
                 </WithPermissionControlTooltip>
-              </HorizontalGroup>
+              </Stack>
             </div>
           </form>
         </div>
@@ -300,7 +296,8 @@ interface EditWebhookTabsProps {
 const EditWebhookTabs = (props: EditWebhookTabsProps) => {
   const { id, data, action, onHide, onUpdate, onDelete, onSubmit, onTemplateEditClick, preset } = props;
 
-  const history = useHistory();
+  const navigate = useNavigate();
+  const styles = useStyles2(getWebhookFormStyles);
 
   const [activeTab, setActiveTab] = useState(
     action === WebhookFormActionType.EDIT_SETTINGS ? WebhookTabs.Settings.key : WebhookTabs.LastRun.key
@@ -313,13 +310,17 @@ const EditWebhookTabs = (props: EditWebhookTabsProps) => {
       onClose={onHide}
       closeOnMaskClick={false}
       tabs={
-        <div className={cx('tabsWrapper')}>
+        <div
+          className={css`
+            padding-top: 16px;
+          `}
+        >
           <TabsBar>
             <Tab
               key={WebhookTabs.Settings.key}
               onChangeTab={() => {
                 setActiveTab(WebhookTabs.Settings.key);
-                history.push(`${PLUGIN_ROOT}/outgoing_webhooks/edit/${id}`);
+                navigate(`${PLUGIN_ROOT}/outgoing_webhooks/edit/${id}`);
               }}
               active={activeTab === WebhookTabs.Settings.key}
               label={WebhookTabs.Settings.value}
@@ -329,7 +330,7 @@ const EditWebhookTabs = (props: EditWebhookTabsProps) => {
               key={WebhookTabs.LastRun.key}
               onChangeTab={() => {
                 setActiveTab(WebhookTabs.LastRun.key);
-                history.push(`${PLUGIN_ROOT}/outgoing_webhooks/last_run/${id}`);
+                navigate(`${PLUGIN_ROOT}/outgoing_webhooks/last_run/${id}`);
               }}
               active={activeTab === WebhookTabs.LastRun.key}
               label={WebhookTabs.LastRun.value}
@@ -338,7 +339,7 @@ const EditWebhookTabs = (props: EditWebhookTabsProps) => {
         </div>
       }
     >
-      <div className={cx('webhooks__drawerContent')}>
+      <div className={styles.webhooksDrawerContent}>
         <WebhookTabsContent
           id={id}
           action={action}
@@ -374,11 +375,12 @@ const WebhookTabsContent: React.FC<WebhookTabsProps> = observer(
     const [confirmationModal, setConfirmationModal] = useState<ConfirmModalProps>(undefined);
 
     const { hasFeature } = useStore();
+    const styles = useStyles2(getWebhookFormStyles);
 
     const { handleSubmit } = useFormContext();
 
     return (
-      <div className={cx('tabs__content')}>
+      <div>
         {confirmationModal && (
           <ConfirmModal
             {...(confirmationModal as ConfirmModalProps)}
@@ -388,15 +390,19 @@ const WebhookTabsContent: React.FC<WebhookTabsProps> = observer(
 
         {activeTab === WebhookTabs.Settings.key && (
           <>
-            <div className={cx('content')}>
-              <form id="OutgoingWebhook" onSubmit={handleSubmit(onSubmit)} className={styles.form}>
+            <div className={styles.content}>
+              <form id="OutgoingWebhook" onSubmit={handleSubmit(onSubmit)}>
                 <OutgoingWebhookFormFields
                   preset={preset}
                   hasLabelsFeature={hasFeature(AppFeature.Labels)}
                   onTemplateEditClick={onTemplateEditClick}
                 />
-                <div className={cx('buttons')}>
-                  <HorizontalGroup justify={'flex-end'}>
+                <div
+                  className={css`
+                    padding-bottom: 24px;
+                  `}
+                >
+                  <Stack justifyContent={'flex-end'}>
                     <Button variant="secondary" onClick={onHide}>
                       Cancel
                     </Button>
@@ -424,7 +430,7 @@ const WebhookTabsContent: React.FC<WebhookTabsProps> = observer(
                         {action === WebhookFormActionType.NEW ? 'Create' : 'Update'}
                       </Button>
                     </WithPermissionControlTooltip>
-                  </HorizontalGroup>
+                  </Stack>
                 </div>
               </form>
             </div>
@@ -442,3 +448,72 @@ const WebhookTabsContent: React.FC<WebhookTabsProps> = observer(
     );
   }
 );
+
+export const getWebhookFormStyles = () => {
+  return {
+    root: css`
+      display: block;
+    `,
+
+    title: css`
+      margin: 0 0 0 16px;
+    `,
+
+    content: css`
+      margin: 4px;
+    `,
+
+    tabsWrapper: css`
+      padding-top: 16px;
+    `,
+
+    formRow: css`
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 4px;
+    `,
+
+    formField: css`
+      flex-grow: 1;
+    `,
+
+    webhooksDrawerContent: css`
+      .cursor.monaco-mouse-cursor-text {
+        display: none !important;
+      }
+    `,
+
+    sourceCodeRoot: css`
+      height: calc(100vh - 530px);
+      min-height: 200px;
+    `,
+
+    cards: css`
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      overflow: auto;
+      scroll-snap-type: y mandatory;
+      width: 100%;
+    `,
+
+    card: css`
+      width: 100%;
+      height: 106px;
+      scroll-snap-align: start;
+      scroll-snap-stop: normal;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      cursor: pointer;
+      position: relative;
+      gap: 20px;
+    `,
+
+    searchIntegration: css`
+      width: 100%;
+      margin-bottom: 24px;
+    `,
+  };
+};

@@ -1,8 +1,10 @@
 import React, { ChangeEvent } from 'react';
 
 import { cx } from '@emotion/css';
-import { SelectableValue } from '@grafana/data';
-import { Button, Input, Select, IconButton, withTheme2, Themeable2 } from '@grafana/ui';
+import { GrafanaTheme2, SelectableValue } from '@grafana/data';
+import { Button, Input, Select, IconButton, withTheme2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { openWarningNotification } from 'helpers/helpers';
 import { isNumber } from 'lodash-es';
 import { observer } from 'mobx-react';
 import moment from 'moment-timezone';
@@ -30,8 +32,6 @@ import { UserGroup } from 'models/user_group/user_group.types';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { WithStoreProps } from 'state/types';
 import { withMobXProviderContext } from 'state/withStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { openWarningNotification } from 'utils/utils';
 
 import { DragHandle } from './DragHandle';
 import { getEscalationPolicyStyles } from './EscalationPolicy.styles';
@@ -57,7 +57,9 @@ interface EscalationPolicyBaseProps {
 
 // We export the base props class, the actual definition is wrapped by MobX
 // MobX adds extra props that we do not need to pass on the consuming side
-export interface EscalationPolicyProps extends EscalationPolicyBaseProps, ElementSortableProps, Themeable2 {}
+export interface EscalationPolicyProps extends EscalationPolicyBaseProps, ElementSortableProps {
+  theme: GrafanaTheme2;
+}
 
 @observer
 class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
@@ -168,7 +170,11 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
       data,
       isDisabled,
       theme,
-      store: { userStore },
+      store: {
+        userStore,
+        // dereferencing items is needed to rerender GSelect
+        userStore: { items: userItems },
+      },
     } = this.props;
     const { notify_to_users_queue } = data;
     const styles = getEscalationPolicyStyles(theme);
@@ -187,7 +193,7 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
           onChange={this.getOnChangeHandler('notify_to_users_queue')}
           getOptionLabel={({ value }: SelectableValue) => <UserTooltip id={value} />}
           width={'auto'}
-          items={userStore.items}
+          items={userItems}
           fetchItemsFn={userStore.fetchItems}
           fetchItemFn={async (id) => await userStore.fetchItemById({ userPk: id, skipIfAlreadyPending: true })}
           getSearchResult={() => UserHelper.getSearchResult(userStore)}
@@ -279,7 +285,7 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
         <Select
           menuShouldPortal
           disabled={isDisabled}
-          placeholder="Select Wait Delay"
+          placeholder="Select or type"
           className={cx(styles.select, styles.control)}
           value={waitDelayInSeconds ? waitDelayOptionItem : undefined}
           onChange={(option: SelectableValue) =>
@@ -335,7 +341,7 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
         <Select
           menuShouldPortal
           disabled={isDisabled}
-          placeholder="Period"
+          placeholder="Select or type"
           className={cx(styles.select, styles.control)}
           value={num_minutes_in_window ? optionValue : undefined}
           onChange={this.getOnSelectChangeHandler('num_minutes_in_window')}
@@ -352,7 +358,12 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
       data,
       theme,
       isDisabled,
-      store: { grafanaTeamStore, scheduleStore },
+      store: {
+        scheduleStore,
+        // dereferencing items is needed to rerender GSelect
+        grafanaTeamStore: { items: grafanaTeamItems },
+        scheduleStore: { items: scheduleItems },
+      },
     } = this.props;
     const { notify_schedule } = data;
     const styles = getEscalationPolicyStyles(theme);
@@ -362,7 +373,7 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
         <GSelect<Schedule>
           allowClear
           disabled={isDisabled}
-          items={scheduleStore.items}
+          items={scheduleItems}
           fetchItemsFn={scheduleStore.updateItems}
           fetchItemFn={scheduleStore.updateItem}
           getSearchResult={scheduleStore.getSearchResult}
@@ -373,7 +384,7 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
           value={notify_schedule}
           onChange={this.getOnChangeHandler('notify_schedule')}
           getOptionLabel={(item: SelectableValue) => {
-            const team = grafanaTeamStore.items[scheduleStore.items[item.value].team];
+            const team = grafanaTeamItems[scheduleStore.items[item.value].team];
             return (
               <>
                 <Text>{item.label} </Text>
@@ -391,7 +402,11 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
       data,
       theme,
       isDisabled,
-      store: { userGroupStore },
+      store: {
+        userGroupStore,
+        // dereferencing items is needed to rerender GSelect
+        userGroupStore: { items: userGroupItems },
+      },
     } = this.props;
 
     const { notify_to_group } = data;
@@ -402,7 +417,7 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
         <GSelect<UserGroup>
           allowClear
           disabled={isDisabled}
-          items={userGroupStore.items}
+          items={userGroupItems}
           fetchItemsFn={userGroupStore.updateItems}
           fetchItemFn={userGroupStore.fetchItemById}
           getSearchResult={userGroupStore.getSearchResult}
@@ -423,7 +438,12 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
       data,
       theme,
       isDisabled,
-      store: { grafanaTeamStore, outgoingWebhookStore },
+      store: {
+        grafanaTeamStore,
+        outgoingWebhookStore,
+        // dereferencing items is needed to rerender GSelect
+        outgoingWebhookStore: { items: outgoingWebhookItems },
+      },
     } = this.props;
 
     const { custom_webhook } = data;
@@ -433,7 +453,7 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
       <WithPermissionControlTooltip key="custom-webhook" userAction={UserActions.EscalationChainsWrite}>
         <GSelect<ApiSchemas['Webhook']>
           disabled={isDisabled}
-          items={outgoingWebhookStore.items}
+          items={outgoingWebhookItems}
           fetchItemsFn={outgoingWebhookStore.updateItems}
           fetchItemFn={outgoingWebhookStore.updateItem}
           getSearchResult={outgoingWebhookStore.getSearchResult}
@@ -455,7 +475,7 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
           width={'auto'}
           filterOptions={(id) => {
             const webhook = outgoingWebhookStore.items[id];
-            return webhook.trigger_type_name === 'Escalation step';
+            return webhook.trigger_type === '0';
           }}
         />
       </WithPermissionControlTooltip>
@@ -466,7 +486,11 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
     const {
       data,
       isDisabled,
-      store: { grafanaTeamStore },
+      store: {
+        grafanaTeamStore,
+        // dereferencing items is needed to rerender GSelect
+        grafanaTeamStore: { items: grafanaTeamItems },
+      },
     } = this.props;
     const { notify_to_team_members } = data;
 
@@ -474,7 +498,7 @@ class _EscalationPolicy extends React.Component<EscalationPolicyProps, any> {
       <WithPermissionControlTooltip key="notify_to_team_members" userAction={UserActions.EscalationChainsWrite}>
         <GSelect<GrafanaTeam>
           disabled={isDisabled}
-          items={grafanaTeamStore.items}
+          items={grafanaTeamItems}
           fetchItemsFn={grafanaTeamStore.updateItems}
           fetchItemFn={grafanaTeamStore.fetchItemById}
           getSearchResult={grafanaTeamStore.getSearchResult}

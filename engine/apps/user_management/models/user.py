@@ -1,5 +1,4 @@
 import datetime
-import json
 import logging
 import re
 import typing
@@ -9,7 +8,7 @@ import pytz
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.validators import MinLengthValidator
-from django.db import models, transaction
+from django.db import models
 from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -21,6 +20,7 @@ from apps.api.permissions import (
     RBACPermission,
     user_is_authorized,
 )
+from apps.google import utils as google_utils
 from apps.google.models import GoogleOAuth2User
 from apps.schedules.tasks import drop_cached_ical_for_custom_events_for_organization
 from apps.user_management.types import AlertGroupTableColumn, GoogleCalendarSettings
@@ -31,7 +31,7 @@ if typing.TYPE_CHECKING:
 
     from apps.alerts.models import AlertGroup, EscalationPolicy
     from apps.auth_token.models import ApiAuthToken, ScheduleExportAuthToken, UserScheduleExportAuthToken
-    from apps.base.models import UserNotificationPolicy
+    from apps.base.models import UserNotificationPolicy, UserNotificationPolicyLogRecord
     from apps.slack.models import SlackUserIdentity
     from apps.social_auth.types import GoogleOauth2Response
     from apps.user_management.models import Organization, Team
@@ -76,85 +76,7 @@ def default_working_hours():
 
 
 class UserManager(models.Manager["User"]):
-    @staticmethod
-    def sync_for_team(team, api_members: list[dict]):
-        user_ids = tuple(member["userId"] for member in api_members)
-        users = team.organization.users.filter(user_id__in=user_ids)
-        team.users.set(users)
-
-    @staticmethod
-    def sync_for_organization(organization, api_users: list[dict]):
-        from apps.base.models import UserNotificationPolicy
-
-        grafana_users = {user["userId"]: user for user in api_users}
-        existing_user_ids = set(organization.users.all().values_list("user_id", flat=True))
-
-        # create missing users
-        users_to_create = tuple(
-            User(
-                organization_id=organization.pk,
-                user_id=user["userId"],
-                email=user["email"],
-                name=user["name"],
-                username=user["login"],
-                role=getattr(LegacyAccessControlRole, user["role"].upper(), LegacyAccessControlRole.NONE),
-                avatar_url=user["avatarUrl"],
-                permissions=user["permissions"],
-            )
-            for user in grafana_users.values()
-            if user["userId"] not in existing_user_ids
-        )
-
-        with transaction.atomic():
-            organization.users.bulk_create(users_to_create, batch_size=5000)
-            # Retrieve primary keys for the newly created users
-            #
-            # If the model’s primary key is an AutoField, the primary key attribute can only be retrieved
-            # on certain databases (currently PostgreSQL, MariaDB 10.5+, and SQLite 3.35+).
-            # On other databases, it will not be set.
-            # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#django.db.models.query.QuerySet.bulk_create
-            created_users = organization.users.exclude(user_id__in=existing_user_ids)
-
-            policies_to_create = ()
-            for user in created_users:
-                policies_to_create = policies_to_create + user.default_notification_policies_defaults
-                policies_to_create = policies_to_create + user.important_notification_policies_defaults
-            UserNotificationPolicy.objects.bulk_create(policies_to_create, batch_size=5000)
-
-        # delete excess users
-        user_ids_to_delete = existing_user_ids - grafana_users.keys()
-        organization.users.filter(user_id__in=user_ids_to_delete).delete()
-
-        # update existing users if any fields have changed
-        users_to_update = []
-        for user in organization.users.filter(user_id__in=existing_user_ids):
-            grafana_user = grafana_users[user.user_id]
-            g_user_role = getattr(LegacyAccessControlRole, grafana_user["role"].upper(), LegacyAccessControlRole.NONE)
-
-            if (
-                user.email != grafana_user["email"]
-                or user.name != grafana_user["name"]
-                or user.username != grafana_user["login"]
-                or user.role != g_user_role
-                or user.avatar_url != grafana_user["avatarUrl"]
-                # instead of looping through the array of permission objects, simply take the hash
-                # of the string representation of the data structures and compare.
-                # Need to first convert the lists of objects to strings because lists/dicts are not hashable
-                # (because lists and dicts are not hashable.. as they are mutable)
-                # https://stackoverflow.com/a/22003440
-                or hash(json.dumps(user.permissions)) != hash(json.dumps(grafana_user["permissions"]))
-            ):
-                user.email = grafana_user["email"]
-                user.name = grafana_user["name"]
-                user.username = grafana_user["login"]
-                user.role = g_user_role
-                user.avatar_url = grafana_user["avatarUrl"]
-                user.permissions = grafana_user["permissions"]
-                users_to_update.append(user)
-
-        organization.users.bulk_update(
-            users_to_update, ["email", "name", "username", "role", "avatar_url", "permissions"], batch_size=5000
-        )
+    pass
 
 
 class UserQuerySet(models.QuerySet):
@@ -181,6 +103,7 @@ class User(models.Model):
     last_notified_in_escalation_policies: "RelatedManager['EscalationPolicy']"
     notification_policies: "RelatedManager['UserNotificationPolicy']"
     organization: "Organization"
+    personal_log_records: "RelatedManager['UserNotificationPolicyLogRecord']"
     resolved_alert_groups: "RelatedManager['AlertGroup']"
     schedule_export_token: "RelatedManager['ScheduleExportAuthToken']"
     silenced_alert_groups: "RelatedManager['AlertGroup']"
@@ -267,8 +190,17 @@ class User(models.Model):
             return False
 
     @property
-    def avatar_full_url(self):
-        return urljoin(self.organization.grafana_url, self.avatar_url)
+    def google_oauth2_token_is_missing_scopes(self) -> bool:
+        if not self.has_google_oauth2_connected:
+            return False
+        return not google_utils.user_granted_all_required_scopes(self.google_oauth2_user.oauth_scope)
+
+    def avatar_full_url(self, organization: "Organization"):
+        """
+        Use arg `organization` instead of `self.organization` to avoid multiple requests to db when getting avatar for
+        users list
+        """
+        return urljoin(organization.grafana_url, self.avatar_url)
 
     @property
     def verified_phone_number(self) -> str | None:
@@ -366,12 +298,12 @@ class User(models.Model):
 
         return day_start <= dt <= day_end
 
-    def short(self):
+    def short(self, organization):
         return {
             "username": self.username,
             "pk": self.public_primary_key,
             "avatar": self.avatar_url,
-            "avatar_full": self.avatar_full_url,
+            "avatar_full": self.avatar_full_url(organization),
         }
 
     # Insight logs
@@ -429,42 +361,30 @@ class User(models.Model):
             return PermissionsQuery(permissions__contains=[required_permission])
         return RoleInQuery(role__lte=permission.fallback_role.value)
 
-    def get_or_create_notification_policies(self, important=False):
-        if not self.notification_policies.filter(important=important).exists():
-            if important:
-                self.notification_policies.create_important_policies_for_user(self)
-            else:
-                self.notification_policies.create_default_policies_for_user(self)
-        notification_policies = self.notification_policies.filter(important=important)
-        return notification_policies
-
-    @property
-    def default_notification_policies_defaults(self):
+    def get_default_fallback_notification_policy(self) -> "UserNotificationPolicy":
         from apps.base.models import UserNotificationPolicy
 
-        print(self)
+        return UserNotificationPolicy.get_default_fallback_policy(self)
 
+    def get_notification_policies_or_use_default_fallback(
+        self, important=False
+    ) -> typing.Tuple[bool, typing.List["UserNotificationPolicy"]]:
+        """
+        If the user has no notification policies defined, fallback to using e-mail as the notification channel.
+
+        The 1st tuple element is a boolean indicating if we are falling back to using a "fallback"/default
+        notification policy step (which occurs when the user has no notification policies defined).
+        """
+        notification_polices = self.notification_policies.filter(important=important)
+
+        if not notification_polices.exists():
+            return (
+                True,
+                [self.get_default_fallback_notification_policy()],
+            )
         return (
-            UserNotificationPolicy(
-                user=self,
-                step=UserNotificationPolicy.Step.NOTIFY,
-                notify_by=settings.EMAIL_BACKEND_INTERNAL_ID,
-                order=0,
-            ),
-        )
-
-    @property
-    def important_notification_policies_defaults(self):
-        from apps.base.models import UserNotificationPolicy
-
-        return (
-            UserNotificationPolicy(
-                user=self,
-                step=UserNotificationPolicy.Step.NOTIFY,
-                notify_by=settings.EMAIL_BACKEND_INTERNAL_ID,
-                important=True,
-                order=0,
-            ),
+            False,
+            list(notification_polices.all()),
         )
 
     def update_alert_group_table_selected_columns(self, columns: typing.List[AlertGroupTableColumn]) -> None:
@@ -472,8 +392,14 @@ class User(models.Model):
             self.alert_group_table_selected_columns = columns
             self.save(update_fields=["alert_group_table_selected_columns"])
 
-    def finish_google_oauth2_connection_flow(self, google_oauth2_response: "GoogleOauth2Response") -> None:
-        _obj, created = GoogleOAuth2User.objects.update_or_create(
+    def save_google_oauth2_settings(self, google_oauth2_response: "GoogleOauth2Response") -> None:
+        logger.info(
+            f"Saving Google OAuth2 settings for user {self.pk} "
+            f"sub={google_oauth2_response.get('sub')} "
+            f"oauth_scope={google_oauth2_response.get('scope')}"
+        )
+
+        _, created = GoogleOAuth2User.objects.update_or_create(
             user=self,
             defaults={
                 "google_user_id": google_oauth2_response.get("sub"),
@@ -488,7 +414,9 @@ class User(models.Model):
             }
             self.save(update_fields=["google_calendar_settings"])
 
-    def finish_google_oauth2_disconnection_flow(self) -> None:
+    def reset_google_oauth2_settings(self) -> None:
+        logger.info(f"Resetting Google OAuth2 settings for user {self.pk}")
+
         GoogleOAuth2User.objects.filter(user=self).delete()
 
         self.google_calendar_settings = None
@@ -498,9 +426,6 @@ class User(models.Model):
 # TODO: check whether this signal can be moved to save method of the model
 @receiver(post_save, sender=User)
 def listen_for_user_model_save(sender: User, instance: User, created: bool, *args, **kwargs) -> None:
-    if created:
-        instance.notification_policies.create_default_policies_for_user(instance)
-        instance.notification_policies.create_important_policies_for_user(instance)
     drop_cached_ical_for_custom_events_for_organization.apply_async(
         (instance.organization_id,),
     )

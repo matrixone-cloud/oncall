@@ -1,6 +1,7 @@
 import React, { FC } from 'react';
 
-import { Button, VerticalGroup } from '@grafana/ui';
+import { Button, Stack } from '@grafana/ui';
+import { StackSize } from 'helpers/consts';
 
 import { Text } from 'components/Text/Text';
 
@@ -14,7 +15,7 @@ export const LinkLoginButton: FC<Props> = (props: Props) => {
   const mobileDeepLink = `grafana://mobile/login/link-login?oncall_api_url=${baseUrl}&token=${token}`;
 
   return (
-    <VerticalGroup spacing="lg">
+    <Stack direction="column" gap={StackSize.lg}>
       <Text type="primary" strong>
         Sign in via deeplink
       </Text>
@@ -27,6 +28,6 @@ export const LinkLoginButton: FC<Props> = (props: Props) => {
       >
         Connect Mobile App
       </Button>
-    </VerticalGroup>
+    </Stack>
   );
 };

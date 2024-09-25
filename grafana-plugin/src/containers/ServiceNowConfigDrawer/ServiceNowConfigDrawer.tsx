@@ -2,18 +2,18 @@ import React from 'react';
 
 import { css } from '@emotion/css';
 import { GrafanaTheme2 } from '@grafana/data';
-import { Drawer, Field, HorizontalGroup, Input, useStyles2, Button } from '@grafana/ui';
+import { Drawer, Field, Input, useStyles2, Button, Stack } from '@grafana/ui';
+import { openNotification } from 'helpers/helpers';
+import { useIsLoading } from 'helpers/hooks';
+import { validateURL } from 'helpers/string';
+import { OmitReadonlyMembers } from 'helpers/types';
 import { observer } from 'mobx-react';
-import { parseUrl } from 'query-string';
 import { Controller, FormProvider, useForm } from 'react-hook-form';
 
 import { ActionKey } from 'models/loader/action-keys';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useCurrentIntegration } from 'pages/integration/OutgoingTab/OutgoingTab.hooks';
 import { useStore } from 'state/useStore';
-import { useIsLoading } from 'utils/hooks';
-import { OmitReadonlyMembers } from 'utils/types';
-import { openNotification } from 'utils/utils';
 
 import { getCommonServiceNowConfigStyles } from './ServiceNow.styles';
 import { ServiceNowAuthSection } from './ServiceNowAuthSection';
@@ -115,24 +115,20 @@ export const ServiceNowConfigDrawer: React.FC<ServiceNowConfigurationDrawerProps
             </div>
 
             <div className={styles.formButtons}>
-              <HorizontalGroup justify="flex-end">
+              <Stack justifyContent="flex-end">
                 <Button variant="secondary" onClick={onHide} disabled={isLoading}>
                   Close
                 </Button>
                 <Button variant="primary" type="submit" disabled={isLoading}>
                   Update
                 </Button>
-              </HorizontalGroup>
+              </Stack>
             </div>
           </form>
         </FormProvider>
       </Drawer>
     </>
   );
-
-  function validateURL(urlFieldValue: string): string | boolean {
-    return !parseUrl(urlFieldValue) ? 'Instance URL is invalid' : true;
-  }
 
   async function onFormSubmit(formData: FormFields): Promise<void> {
     const data: OmitReadonlyMembers<ApiSchemas['AlertReceiveChannel']> = {

@@ -1,28 +1,30 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, HorizontalGroup, Icon, LoadingPlaceholder, VerticalGroup } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { css, cx } from '@emotion/css';
+import { Button, Icon, LoadingPlaceholder, Stack, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { IS_CURRENT_ENV_CLOUD, StackSize } from 'helpers/consts';
+import { isMobile, openNotification, openWarningNotification, openErrorNotification } from 'helpers/helpers';
+import { useInitializePlugin } from 'helpers/hooks';
 import { observer } from 'mobx-react';
 
 import qrCodeImage from 'assets/img/qr-code.png';
 import { Block } from 'components/GBlock/Block';
 import { PluginLink } from 'components/PluginLink/PluginLink';
+import { RenderConditionally } from 'components/RenderConditionally/RenderConditionally';
 import { Text } from 'components/Text/Text';
+import { PluginInitializer } from 'containers/PluginInitializer/PluginInitializer';
 import { WithPermissionControlDisplay } from 'containers/WithPermissionControl/WithPermissionControlDisplay';
 import { UserHelper } from 'models/user/user.helpers';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { AppFeature } from 'state/features';
 import { RootStore, rootStore as store } from 'state/rootStore';
-import { UserActions } from 'utils/authorization/authorization';
-import { isMobile, openErrorNotification, openNotification, openWarningNotification } from 'utils/utils';
 
-import styles from './MobileAppConnection.module.scss';
+import { getMobileAppConnectionStyles } from './MobileAppConnection.styles';
 import { DisconnectButton } from './parts/DisconnectButton/DisconnectButton';
 import { DownloadIcons } from './parts/DownloadIcons/DownloadIcons';
 import { LinkLoginButton } from './parts/LinkLoginButton/LinkLoginButton';
 import { QRCode } from './parts/QRCode/QRCode';
-
-const cx = cn.bind(styles);
 
 type Props = {
   userPk?: ApiSchemas['User']['pk'];
@@ -58,6 +60,8 @@ export const MobileAppConnection = observer(({ userPk }: Props) => {
   const [isQRBlurry, setIsQRBlurry] = useState<boolean>(false);
   const [isAttemptingTestNotification, setIsAttemptingTestNotification] = useState(false);
   const isCurrentUser = userPk === undefined || userStore.currentUserPk === userPk;
+
+  const styles = useStyles2(getMobileAppConnectionStyles);
 
   useEffect(() => {
     isMounted.current = true;
@@ -136,7 +140,7 @@ export const MobileAppConnection = observer(({ userPk }: Props) => {
 
   // Show link to cloud page for OSS instances with no cloud connection
   if (
-    store.isOpenSource &&
+    !IS_CURRENT_ENV_CLOUD &&
     store.hasFeature(AppFeature.CloudConnection) &&
     !cloudStore.cloudConnectionStatus.cloud_connection_status
   ) {
@@ -152,34 +156,42 @@ export const MobileAppConnection = observer(({ userPk }: Props) => {
     content = <Text type="primary">{errorFetchingQRCode || errorDisconnectingMobileApp}</Text>;
   } else if (mobileAppIsCurrentlyConnected) {
     content = (
-      <VerticalGroup spacing="lg">
+      <Stack direction="column" gap={StackSize.lg}>
         <Text strong type="primary">
-          App connected <Icon name="check-circle" size="md" className={cx('icon')} />
+          App connected <Icon name="check-circle" size="md" className={styles.icon} />
         </Text>
         <Text type="primary">
           You can only sync one application to your account. To setup a new device, please disconnect the currently
           connected device first.
         </Text>
-        <div className={cx('disconnect__container')}>
-          <img src={qrCodeImage} className={cx('disconnect__qrCode')} />
+        <div className={styles.disconnectContainer}>
+          <img src={qrCodeImage} className={styles.disconnectQRCode} />
           <DisconnectButton onClick={disconnectMobileApp} />
         </div>
-      </VerticalGroup>
+      </Stack>
     );
   } else if (QRCodeValue) {
     content = (
-      <VerticalGroup spacing="lg">
+      <Stack direction="column" gap={StackSize.lg}>
         <Text type="primary" strong>
           Sign in via QR Code
         </Text>
         <Text type="primary">
           Open the Grafana OnCall mobile application and scan this code to sync it with your account.
         </Text>
-        <div className={cx('u-width-100', 'u-flex', 'u-flex-center', 'u-position-relative')}>
-          <QRCode className={cx({ 'qr-code': true, blurry: isQRBlurry })} value={QRCodeValue} />
+        <div
+          className={css`
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+          `}
+        >
+          <QRCode className={cx({ [styles.qrCode]: true, [styles.blurry]: isQRBlurry })} value={QRCodeValue} />
           {isQRBlurry && <QRLoading />}
         </div>
-        {store.isOpenSource && QRCodeDataParsed && (
+        {!IS_CURRENT_ENV_CLOUD && QRCodeDataParsed && (
           <Text type="secondary">
             Server URL embedded in this QR:
             <br />
@@ -188,30 +200,30 @@ export const MobileAppConnection = observer(({ userPk }: Props) => {
             </a>
           </Text>
         )}
-      </VerticalGroup>
+      </Stack>
     );
   }
 
   return (
     <>
       <h3>Mobile App Connection</h3>
-      <VerticalGroup>
-        <div className={cx('container')}>
+      <Stack direction="column">
+        <div className={styles.container}>
           {QRCodeDataParsed && isMobile && (
-            <Block shadowed bordered withBackground className={cx('container__box')}>
+            <Block shadowed bordered withBackground className={styles.containerBox}>
               <LinkLoginButton baseUrl={QRCodeDataParsed.oncall_api_url} token={QRCodeDataParsed.token} />
             </Block>
           )}
-          <Block shadowed bordered withBackground className={cx('container__box')}>
+          <Block shadowed bordered withBackground className={styles.containerBox}>
             {content}
           </Block>
-          <Block shadowed bordered withBackground className={cx('container__box')}>
+          <Block shadowed bordered withBackground className={styles.containerBox}>
             <DownloadIcons />
           </Block>
         </div>
         {mobileAppIsCurrentlyConnected && isCurrentUser && !disconnectingMobileApp && (
-          <div className={cx('notification-buttons')}>
-            <HorizontalGroup spacing={'md'} justify={'flex-end'}>
+          <div className={styles.notificationButtons}>
+            <Stack gap={StackSize.md} justifyContent={'flex-end'}>
               <Button
                 variant="secondary"
                 onClick={() => onSendTestNotification()}
@@ -226,17 +238,17 @@ export const MobileAppConnection = observer(({ userPk }: Props) => {
               >
                 Send Test Push Important
               </Button>
-            </HorizontalGroup>
+            </Stack>
           </div>
         )}
-      </VerticalGroup>
+      </Stack>
     </>
   );
 
   function renderConnectToCloud() {
     return (
       <WithPermissionControlDisplay userAction={UserActions.UserSettingsWrite}>
-        <VerticalGroup spacing="lg">
+        <Stack direction="column" gap={StackSize.lg}>
           <Text type="secondary">Please connect Grafana Cloud OnCall to use the mobile app</Text>
           <WithPermissionControlDisplay
             userAction={UserActions.OtherSettingsWrite}
@@ -249,7 +261,7 @@ export const MobileAppConnection = observer(({ userPk }: Props) => {
               </Button>
             </PluginLink>
           </WithPermissionControlDisplay>
-        </VerticalGroup>
+        </Stack>
       </WithPermissionControlDisplay>
     );
   }
@@ -352,9 +364,11 @@ export const MobileAppConnection = observer(({ userPk }: Props) => {
 });
 
 function QRLoading() {
+  const styles = useStyles2(getMobileAppConnectionStyles);
+
   return (
-    <div className={cx('qr-loader')}>
-      <Text type="primary" className={cx('qr-loader__text')}>
+    <div className={styles.qrLoader}>
+      <Text type="primary" className={styles.qrLoaderText}>
         Regenerating QR code...
       </Text>
       <LoadingPlaceholder text="Loading..." />
@@ -364,10 +378,13 @@ function QRLoading() {
 
 export const MobileAppConnectionWrapper: React.FC<{}> = observer(() => {
   const { userStore } = store;
+  const { isConnected } = useInitializePlugin();
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (isConnected) {
+      loadData();
+    }
+  }, [isConnected]);
 
   const loadData = async () => {
     if (!store.isBasicDataLoaded) {
@@ -379,9 +396,17 @@ export const MobileAppConnectionWrapper: React.FC<{}> = observer(() => {
     }
   };
 
-  if (store.isBasicDataLoaded && userStore.currentUserPk) {
-    return <MobileAppConnection userPk={userStore.currentUserPk} />;
-  }
-
-  return <LoadingPlaceholder text="Loading..." />;
+  return (
+    <PluginInitializer>
+      <RenderConditionally
+        shouldRender={Boolean(store.isBasicDataLoaded && userStore.currentUserPk)}
+        render={() => (
+          <div data-testid="mobile-app-connection">
+            <MobileAppConnection userPk={userStore.currentUserPk} />
+          </div>
+        )}
+        backupChildren={<LoadingPlaceholder text="Loading..." />}
+      />
+    </PluginInitializer>
+  );
 });

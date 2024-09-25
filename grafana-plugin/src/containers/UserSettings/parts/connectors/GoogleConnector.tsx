@@ -1,6 +1,8 @@
 import React from 'react';
 
-import { Button, HorizontalGroup, InlineField } from '@grafana/ui';
+import { Button, InlineField, Stack } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { StackSize } from 'helpers/consts';
 import { observer } from 'mobx-react';
 
 import { WithConfirm } from 'components/WithConfirm/WithConfirm';
@@ -8,7 +10,6 @@ import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/W
 import { UserHelper } from 'models/user/user.helpers';
 import { ApiSchemas } from 'network/oncall-api/api.types';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
 
 interface GoogleConnectorProps {
   id: ApiSchemas['User']['pk'];
@@ -28,7 +29,7 @@ export const GoogleConnector = observer((props: GoogleConnectorProps) => {
     <div>
       <InlineField label="Google Account" labelWidth={15}>
         {storeUser.has_google_oauth2_connected ? (
-          <HorizontalGroup spacing="xs">
+          <Stack gap={StackSize.xs}>
             <WithPermissionControlTooltip userAction={UserActions.UserSettingsWrite}>
               <WithConfirm title="Are you sure to disconnect your Google account?" confirmText="Disconnect">
                 <Button disabled={!isCurrentUser} variant="destructive" onClick={userStore.disconnectGoogle}>
@@ -36,7 +37,7 @@ export const GoogleConnector = observer((props: GoogleConnectorProps) => {
                 </Button>
               </WithConfirm>
             </WithPermissionControlTooltip>
-          </HorizontalGroup>
+          </Stack>
         ) : (
           <WithPermissionControlTooltip userAction={UserActions.UserSettingsWrite}>
             <Button disabled={!isCurrentUser} onClick={UserHelper.handleConnectGoogle}>

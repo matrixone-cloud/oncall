@@ -7,6 +7,7 @@ from random import randrange
 from celery.schedules import crontab
 from firebase_admin import credentials, initialize_app
 
+from common.api_helpers.custom_ratelimit import getenv_custom_ratelimit
 from common.utils import getenv_boolean, getenv_integer, getenv_list
 
 VERSION = "dev-oss"
@@ -73,6 +74,8 @@ FEATURE_LABELS_ENABLED_FOR_ALL = getenv_boolean("FEATURE_LABELS_ENABLED_FOR_ALL"
 # Enable labels feature for organizations from the list. Use OnCall organization ID, for this flag
 FEATURE_LABELS_ENABLED_PER_ORG = getenv_list("FEATURE_LABELS_ENABLED_PER_ORG", default=list())
 FEATURE_ALERT_GROUP_SEARCH_ENABLED = getenv_boolean("FEATURE_ALERT_GROUP_SEARCH_ENABLED", default=True)
+FEATURE_ALERT_GROUP_SEARCH_CUTOFF_DAYS = getenv_integer("FEATURE_ALERT_GROUP_SEARCH_CUTOFF_DAYS", default=None)
+FEATURE_NOTIFICATION_BUNDLE_ENABLED = getenv_boolean("FEATURE_NOTIFICATION_BUNDLE_ENABLED", default=True)
 
 TWILIO_API_KEY_SID = os.environ.get("TWILIO_API_KEY_SID")
 TWILIO_API_KEY_SECRET = os.environ.get("TWILIO_API_KEY_SECRET")
@@ -106,6 +109,17 @@ CHATOPS_SIGNING_SECRET = os.environ.get("CHATOPS_SIGNING_SECRET", None)
 
 # Prometheus exporter metrics endpoint auth
 PROMETHEUS_EXPORTER_SECRET = os.environ.get("PROMETHEUS_EXPORTER_SECRET")
+# Application metric names without prefixes
+METRIC_ALERT_GROUPS_TOTAL_NAME = "alert_groups_total"
+METRIC_ALERT_GROUPS_RESPONSE_TIME_NAME = "alert_groups_response_time"
+METRIC_USER_WAS_NOTIFIED_OF_ALERT_GROUPS_NAME = "user_was_notified_of_alert_groups"
+METRICS_ALL = [
+    METRIC_ALERT_GROUPS_TOTAL_NAME,
+    METRIC_ALERT_GROUPS_RESPONSE_TIME_NAME,
+    METRIC_USER_WAS_NOTIFIED_OF_ALERT_GROUPS_NAME,
+]
+# List of metrics to collect. Collect all available application metrics by default
+METRICS_TO_COLLECT = getenv_list("METRICS_TO_COLLECT", METRICS_ALL)
 
 
 # Database
@@ -187,6 +201,13 @@ if DATABASE_TYPE == DatabaseTypes.MYSQL:
     import pymysql
 
     pymysql.install_as_MySQLdb()
+
+DJANGO_MYSQL_REWRITE_QUERIES = True
+
+ALERT_GROUPS_DISABLE_PREFER_ORDERING_INDEX = DATABASE_TYPE == DatabaseTypes.MYSQL and getenv_boolean(
+    "ALERT_GROUPS_DISABLE_PREFER_ORDERING_INDEX", default=False
+)
+ALERT_GROUP_LIST_TRY_PREFETCH = getenv_boolean("ALERT_GROUP_LIST_TRY_PREFETCH", default=False)
 
 # Redis
 REDIS_USERNAME = os.getenv("REDIS_USERNAME", "")
@@ -288,6 +309,9 @@ INSTALLED_APPS = [
     "apps.chatops_proxy",
 ]
 
+if DATABASE_TYPE == DatabaseTypes.MYSQL:
+    INSTALLED_APPS += ["django_mysql"]
+
 REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": (
         "rest_framework.parsers.JSONParser",
@@ -324,6 +348,9 @@ SPECTACULAR_INCLUDED_PATHS = [
     "/features",
     "/alertgroups",
     "/alert_receive_channels",
+    "/webhooks",
+    # current user endpoint 👇, without trailing slash we pick-up /user_group endpoints, which we don't want for now
+    "/user/",
     "/users",
     "/labels",
     # social auth routes
@@ -450,8 +477,6 @@ TIME_ZONE = "UTC"
 
 USE_I18N = True
 
-USE_L10N = True
-
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
@@ -552,12 +577,12 @@ CELERY_BEAT_SCHEDULE = {
         "args": (),
     },
     "start_sync_organizations": {
-        "task": "apps.grafana_plugin.tasks.sync.start_sync_organizations",
+        "task": "apps.grafana_plugin.tasks.sync_v2.start_sync_organizations_v2",
         "schedule": crontab(minute="*/30"),
         "args": (),
     },
-    "start_cleanup_organizations": {
-        "task": "apps.grafana_plugin.tasks.sync.start_cleanup_organizations",
+    "start_cleanup_deleted_integrations": {
+        "task": "apps.grafana_plugin.tasks.sync.start_cleanup_deleted_integrations",
         "schedule": crontab(hour="4, 16", minute=35),
         "args": (),
     },
@@ -594,6 +619,14 @@ CELERY_BEAT_SCHEDULE = {
         "args": (),
     },
 }
+
+START_SYNC_ORG_WITH_CHATOPS_PROXY_ENABLED = getenv_boolean("START_SYNC_ORG_WITH_CHATOPS_PROXY_ENABLED", default=False)
+if FEATURE_MULTIREGION_ENABLED and START_SYNC_ORG_WITH_CHATOPS_PROXY_ENABLED:
+    CELERY_BEAT_SCHEDULE["start_sync_org_with_chatops_proxy"] = {
+        "task": "apps.chatops_proxy.tasks.start_sync_org_with_chatops_proxy",
+        "schedule": crontab(minute=0, hour=12),  # Execute every day at noon
+        "args": (),
+    }
 
 if ESCALATION_AUDITOR_ENABLED:
     CELERY_BEAT_SCHEDULE["check_escalations"] = {
@@ -684,6 +717,8 @@ SLACK_SIGNING_SECRET_LIVE = os.environ.get("SLACK_SIGNING_SECRET_LIVE", "")
 SLACK_CLIENT_OAUTH_ID = os.environ.get("SLACK_CLIENT_OAUTH_ID")
 SLACK_CLIENT_OAUTH_SECRET = os.environ.get("SLACK_CLIENT_OAUTH_SECRET")
 SLACK_DIRECT_PAGING_SLASH_COMMAND = os.environ.get("SLACK_DIRECT_PAGING_SLASH_COMMAND", "/escalate").lstrip("/")
+# it's a root command for unified slack - '/<SLACK_IRM_ROOT_COMMAND> incident new', '/<SLACK_IRM_ROOT_COMMAND> escalate'
+SLACK_IRM_ROOT_COMMAND = os.environ.get("SLACK_IRM_ROOT_COMMAND", "/grafana").lstrip("/")
 
 # Controls if slack integration can be installed/uninstalled.
 SLACK_INTEGRATION_MAINTENANCE_ENABLED = os.environ.get("SLACK_INTEGRATION_MAINTENANCE_ENABLED", False)
@@ -716,7 +751,7 @@ SOCIAL_AUTH_PIPELINE = (
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_PIPELINE = (
     "apps.social_auth.pipeline.common.set_user_and_organization_from_request",
-    "apps.social_auth.pipeline.google.persist_access_and_refresh_tokens",
+    "apps.social_auth.pipeline.google.connect_user_to_google",
 )
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_DISCONNECT_PIPELINE = (
@@ -798,15 +833,15 @@ SELF_HOSTED_SETTINGS = {
     "ORG_SLUG": os.environ.get("SELF_HOSTED_ORG_SLUG", "self_hosted_org"),
     "ORG_TITLE": os.environ.get("SELF_HOSTED_ORG_TITLE", "Self-Hosted Organization"),
     "REGION_SLUG": os.environ.get("SELF_HOSTED_REGION_SLUG", "self_hosted_region"),
-    "GRAFANA_API_URL": os.environ.get("FINAL_API_URL", default=None),
+    "GRAFANA_API_URL": os.environ.get("FINAL_API_URL", default="http://localhost:3000"),
     "CLUSTER_SLUG": os.environ.get("SELF_HOSTED_CLUSTER_SLUG", "self_hosted_cluster"),
 }
 
 GRAFANA_INCIDENT_STATIC_API_KEY = os.environ.get("GRAFANA_INCIDENT_STATIC_API_KEY", None)
 
-JINJA_TEMPLATE_MAX_LENGTH = 50000
-JINJA_RESULT_TITLE_MAX_LENGTH = 500
-JINJA_RESULT_MAX_LENGTH = 50000
+JINJA_TEMPLATE_MAX_LENGTH = os.getenv("JINJA_TEMPLATE_MAX_LENGTH", 50000)
+JINJA_RESULT_TITLE_MAX_LENGTH = os.getenv("JINJA_RESULT_TITLE_MAX_LENGTH", 500)
+JINJA_RESULT_MAX_LENGTH = os.getenv("JINJA_RESULT_MAX_LENGTH", 50000)
 
 # Log inbound/outbound calls as slow=1 if they exceed threshold
 SLOW_THRESHOLD_SECONDS = 2.0
@@ -820,6 +855,7 @@ EMAIL_PORT = getenv_integer("EMAIL_PORT", 587)
 EMAIL_USE_TLS = getenv_boolean("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = getenv_boolean("EMAIL_USE_SSL", False)
 EMAIL_FROM_ADDRESS = os.getenv("EMAIL_FROM_ADDRESS")
+EMAIL_FROM_DOMAIN = os.getenv("EMAIL_FROM_DOMAIN", "grafana.net")
 EMAIL_NOTIFICATIONS_LIMIT = getenv_integer("EMAIL_NOTIFICATIONS_LIMIT", 200)
 
 EMAIL_BACKEND_INTERNAL_ID = 8
@@ -962,3 +998,15 @@ MOC_DEFAULT_ALERT_CALLER = os.getenv("MOC_DEFAULT_ALERT_CALLER", "0571000014479"
 MOC_DEFAULT_ALERT_ACK_TMPL = os.getenv("MOC_DEFAULT_ALERT_ACK_TMPL", "TTS_304335006")
 MOC_DEFAULT_ALERT_RESOLVE_TMPL = os.getenv("MOC_DEFAULT_ALERT_RESOLVE_TMPL", "TTS_304410001")
 MOC_DEFAULT_ALERT_IGNORE_TMPL = os.getenv("MOC_DEFAULT_ALERT_IGNORE_TMPL", "TTS_304370003")
+# The CUSTOM_RATELIMITS environment variable is expected to be a JSON string that defines rate limits
+# for different levels (e.g., integration, organization, public API).
+# Example of CUSTOM_RATELIMITS in environment variable:
+# CUSTOM_RATELIMITS={"1": {"integration": "10/5m", "organization": "15/5m", "public_api": "10/5m"}}
+# Where, "1" is the pk of the organization
+
+# Load the environment variable and parse it into a dictionary of custom ralimits, falling back to an empty dictionary if not set.
+CUSTOM_RATELIMITS = getenv_custom_ratelimit("CUSTOM_RATELIMITS", default={})
+
+SYNC_V2_MAX_TASKS = getenv_integer("SYNC_V2_MAX_TASKS", 6)
+SYNC_V2_PERIOD_SECONDS = getenv_integer("SYNC_V2_PERIOD_SECONDS", 240)
+SYNC_V2_BATCH_SIZE = getenv_integer("SYNC_V2_BATCH_SIZE", 500)

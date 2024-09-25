@@ -1,20 +1,18 @@
 import React from 'react';
 
 import { cx } from '@emotion/css';
-import { Card, HorizontalGroup, useStyles2 } from '@grafana/ui';
+import { Card, Stack, useStyles2 } from '@grafana/ui';
+import { APP_SUBTITLE, IS_CURRENT_ENV_OSS } from 'helpers/consts';
 import { observer } from 'mobx-react';
 
 import gitHubStarSVG from 'assets/img/github_star.svg';
 import logo from 'assets/img/logo.svg';
 import { Alerts } from 'containers/Alerts/Alerts';
 import { isTopNavbar } from 'plugin/GrafanaPluginRootPage.helpers';
-import { useStore } from 'state/useStore';
-import { APP_SUBTITLE } from 'utils/consts';
 
 import { getHeaderStyles } from './Header.styles';
 
 export const Header = observer(() => {
-  const store = useStore();
   const styles = useStyles2(getHeaderStyles);
 
   return (
@@ -34,7 +32,7 @@ export const Header = observer(() => {
   );
 
   function renderHeading() {
-    if (store.isOpenSource) {
+    if (IS_CURRENT_ENV_OSS) {
       return (
         <div className={cx('heading')}>
           <h1 className={styles.pageHeaderTitle}>Grafana OnCall</h1>
@@ -58,9 +56,9 @@ export const Header = observer(() => {
 
     return (
       <>
-        <HorizontalGroup>
+        <Stack>
           <h1 className={styles.pageHeaderTitle}>Grafana OnCall</h1>
-        </HorizontalGroup>
+        </Stack>
         <div className={cx('page-header__sub-title')}>{APP_SUBTITLE}</div>
       </>
     );

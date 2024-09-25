@@ -21,7 +21,7 @@ def get_from_email(user):
         return live_settings.EMAIL_FROM_ADDRESS
 
     if settings.LICENSE == settings.CLOUD_LICENSE_NAME:
-        return "oncall@{}.grafana.net".format(user.organization.stack_slug)
+        return "oncall@{}.{}".format(user.organization.stack_slug, settings.EMAIL_FROM_DOMAIN)
 
     return live_settings.EMAIL_HOST_USER
 
@@ -43,15 +43,33 @@ def notify_user_async(user_pk, alert_group_pk, notification_policy_pk):
         logger.warning(f"Alert group {alert_group_pk} does not exist")
         return
 
-    try:
-        notification_policy = UserNotificationPolicy.objects.get(pk=notification_policy_pk)
-    except UserNotificationPolicy.DoesNotExist:
-        logger.warning(f"User notification policy {notification_policy_pk} does not exist")
-        return
+    using_fallback_default_notification_policy_step = False
+
+    if notification_policy_pk is None:
+        # NOTE: `notification_policy_pk` may be None if the user has no notification policies defined, as
+        # email is the default backend used. see `UserNotificationPolicy.get_default_fallback_policy` for more details
+        notification_policy = UserNotificationPolicy.get_default_fallback_policy(user)
+        using_fallback_default_notification_policy_step = True
+    else:
+        try:
+            notification_policy = UserNotificationPolicy.objects.get(pk=notification_policy_pk)
+        except UserNotificationPolicy.DoesNotExist:
+            logger.warning(f"User notification policy {notification_policy_pk} does not exist")
+            return
+
+    def _create_user_notification_policy_log_record(**kwargs):
+        return UserNotificationPolicyLogRecord.objects.create(
+            **kwargs, using_fallback_default_notification_policy_step=using_fallback_default_notification_policy_step
+        )
+
+    def _create_email_message(**kwargs):
+        return EmailMessage.objects.create(
+            **kwargs, using_fallback_default_notification_policy_step=using_fallback_default_notification_policy_step
+        )
 
     # create an error log in case EMAIL_HOST is not specified
     if not live_settings.EMAIL_HOST:
-        UserNotificationPolicyLogRecord.objects.create(
+        _create_user_notification_policy_log_record(
             author=user,
             type=UserNotificationPolicyLogRecord.TYPE_PERSONAL_NOTIFICATION_FAILED,
             notification_policy=notification_policy,
@@ -65,7 +83,7 @@ def notify_user_async(user_pk, alert_group_pk, notification_policy_pk):
 
     emails_left = user.organization.emails_left(user)
     if emails_left <= 0:
-        UserNotificationPolicyLogRecord.objects.create(
+        _create_user_notification_policy_log_record(
             author=user,
             type=UserNotificationPolicyLogRecord.TYPE_PERSONAL_NOTIFICATION_FAILED,
             notification_policy=notification_policy,
@@ -75,7 +93,7 @@ def notify_user_async(user_pk, alert_group_pk, notification_policy_pk):
             notification_channel=notification_policy.notify_by,
             notification_error_code=UserNotificationPolicyLogRecord.ERROR_NOTIFICATION_MAIL_LIMIT_EXCEEDED,
         )
-        EmailMessage.objects.create(
+        _create_email_message(
             represents_alert_group=alert_group,
             notification_policy=notification_policy,
             receiver=user,
@@ -102,7 +120,7 @@ def notify_user_async(user_pk, alert_group_pk, notification_policy_pk):
 
     try:
         send_mail(subject, message, from_email, recipient_list, html_message=html_message, connection=connection)
-        EmailMessage.objects.create(
+        _create_email_message(
             represents_alert_group=alert_group,
             notification_policy=notification_policy,
             receiver=user,
@@ -111,7 +129,7 @@ def notify_user_async(user_pk, alert_group_pk, notification_policy_pk):
     except (gaierror, BadHeaderError) as e:
         # gaierror is raised when EMAIL_HOST is invalid
         # BadHeaderError is raised when there's newlines in the subject
-        UserNotificationPolicyLogRecord.objects.create(
+        _create_user_notification_policy_log_record(
             author=user,
             type=UserNotificationPolicyLogRecord.TYPE_PERSONAL_NOTIFICATION_FAILED,
             notification_policy=notification_policy,
@@ -124,7 +142,7 @@ def notify_user_async(user_pk, alert_group_pk, notification_policy_pk):
         return
 
     # record success log
-    UserNotificationPolicyLogRecord.objects.create(
+    _create_user_notification_policy_log_record(
         author=user,
         type=UserNotificationPolicyLogRecord.TYPE_PERSONAL_NOTIFICATION_SUCCESS,
         notification_policy=notification_policy,

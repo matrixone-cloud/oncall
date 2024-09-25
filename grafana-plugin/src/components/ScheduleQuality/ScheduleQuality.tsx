@@ -1,7 +1,8 @@
 import React, { FC, useEffect } from 'react';
 
 import { cx } from '@emotion/css';
-import { Tooltip, VerticalGroup, useStyles2 } from '@grafana/ui';
+import { Tooltip, Stack, useStyles2 } from '@grafana/ui';
+import { StackSize } from 'helpers/consts';
 import { observer } from 'mobx-react';
 import { getUtilStyles } from 'styles/utils.styles';
 
@@ -50,7 +51,7 @@ export const ScheduleQuality: FC<ScheduleQualityProps> = observer(({ schedule })
             text={schedule.number_of_escalation_chains}
             tooltipTitle="Used in escalations"
             tooltipContent={
-              <VerticalGroup spacing="sm">
+              <Stack direction="column" gap={StackSize.sm}>
                 {relatedScheduleEscalationChains.map((escalationChain) => (
                   <div key={escalationChain.pk}>
                     <PluginLink query={{ page: 'escalations', id: escalationChain.pk }} className="link">
@@ -58,7 +59,7 @@ export const ScheduleQuality: FC<ScheduleQualityProps> = observer(({ schedule })
                     </PluginLink>
                   </div>
                 ))}
-              </VerticalGroup>
+              </Stack>
             }
           />
         )}
@@ -71,13 +72,13 @@ export const ScheduleQuality: FC<ScheduleQualityProps> = observer(({ schedule })
             text={schedule.warnings.length}
             tooltipTitle="Warnings"
             tooltipContent={
-              <VerticalGroup spacing="none">
+              <Stack direction="column" gap={StackSize.none}>
                 {schedule.warnings.map((warning, index) => (
                   <Text type="primary" key={index}>
                     {warning}
                   </Text>
                 ))}
-              </VerticalGroup>
+              </Stack>
             }
           />
         )}

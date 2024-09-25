@@ -1,7 +1,10 @@
 import React, { useCallback } from 'react';
 
-import { HorizontalGroup, InlineSwitch } from '@grafana/ui';
-import cn from 'classnames/bind';
+import { cx } from '@emotion/css';
+import { InlineSwitch, Stack, useStyles2 } from '@grafana/ui';
+import { UserActions } from 'helpers/authorization/authorization';
+import { StackSize } from 'helpers/consts';
+import { observer } from 'mobx-react';
 
 import { GSelect } from 'containers/GSelect/GSelect';
 import { WithPermissionControlTooltip } from 'containers/WithPermissionControl/WithPermissionControlTooltip';
@@ -9,24 +12,25 @@ import { ChannelFilter } from 'models/channel_filter/channel_filter.types';
 import { PRIVATE_CHANNEL_NAME } from 'models/slack_channel/slack_channel.config';
 import { SlackChannel } from 'models/slack_channel/slack_channel.types';
 import { useStore } from 'state/useStore';
-import { UserActions } from 'utils/authorization/authorization';
 
-import styles from './Connectors.module.css';
-
-const cx = cn.bind(styles);
+import { getConnectorsStyles } from './Connectors.styles';
 
 interface SlackConnectorProps {
   channelFilterId: ChannelFilter['id'];
 }
 
-export const SlackConnector = (props: SlackConnectorProps) => {
+export const SlackConnector = observer((props: SlackConnectorProps) => {
   const { channelFilterId } = props;
 
   const store = useStore();
+  const styles = useStyles2(getConnectorsStyles);
+
   const {
     organizationStore: { currentOrganization },
     alertReceiveChannelStore,
     slackChannelStore,
+    // dereferencing items is needed to rerender GSelect
+    slackChannelStore: { items: slackChannelItems },
   } = store;
 
   const channelFilter = store.alertReceiveChannelStore.channelFilters[channelFilterId];
@@ -41,9 +45,9 @@ export const SlackConnector = (props: SlackConnectorProps) => {
   }, []);
 
   return (
-    <div className={cx('root')}>
-      <HorizontalGroup wrap spacing="sm">
-        <div className={cx('slack-channel-switch')}>
+    <div className={styles.root}>
+      <Stack wrap="wrap" gap={StackSize.sm}>
+        <div>
           <WithPermissionControlTooltip userAction={UserActions.IntegrationsWrite}>
             <InlineSwitch
               value={channelFilter.notify_in_slack}
@@ -57,7 +61,7 @@ export const SlackConnector = (props: SlackConnectorProps) => {
           <GSelect<SlackChannel>
             allowClear
             className={cx('select', 'control')}
-            items={slackChannelStore.items}
+            items={slackChannelItems}
             fetchItemsFn={slackChannelStore.updateItems}
             fetchItemFn={slackChannelStore.updateItem}
             getSearchResult={getSearchResult}
@@ -71,7 +75,7 @@ export const SlackConnector = (props: SlackConnectorProps) => {
             nullItemName={PRIVATE_CHANNEL_NAME}
           />
         </WithPermissionControlTooltip>
-      </HorizontalGroup>
+      </Stack>
     </div>
   );
 
@@ -94,4 +98,4 @@ export const SlackConnector = (props: SlackConnectorProps) => {
 
     return results;
   }
-};
+});
